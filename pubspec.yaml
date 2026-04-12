@@ -1,0 +1,70 @@
+name: rentstuff
+description: Marketplace platform for renting hobby equipment
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # Network
+  dio: ^5.4.3
+  retrofit: ^4.1.0
+
+  # Local Storage
+  shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.0.0
+
+  # Firebase
+  firebase_core: ^2.31.1
+  firebase_auth: ^4.19.5
+  cloud_firestore: ^4.17.4
+  firebase_messaging: ^14.9.3
+  firebase_storage: ^11.7.5
+
+  # UI
+  cached_network_image: ^3.3.1
+  image_picker: ^1.1.2
+  table_calendar: ^3.1.2
+  flutter_rating_bar: ^4.0.1
+  shimmer: ^3.0.0
+  lottie: ^3.1.2
+  badges: ^3.1.2
+  intl: ^0.19.0
+
+  # Utils
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+  equatable: ^2.0.5
+  dartz: ^0.10.1
+  connectivity_plus: ^6.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.9
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  retrofit_generator: ^8.1.0
+  riverpod_generator: ^2.4.0
+  custom_lint: ^0.6.4
+  riverpod_lint: ^2.3.10
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/

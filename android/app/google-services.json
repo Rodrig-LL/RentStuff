@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "925576488292",
+    "project_id": "rentstuff-app",
+    "storage_bucket": "rentstuff-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925576488292:android:fc29a3d2a4803eecfa4671",
+        "android_client_info": {
+          "package_name": "com.example.rentstuff"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAc3M27MB3H0KaBHtY6PJLjtHxmVfgqIFU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
