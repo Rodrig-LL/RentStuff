@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/listing_entity.dart';
-import 'borrower_home_page.dart';
-import 'borrower_orders_page.dart';
 import '../providers/booking_provider.dart';
 
 class CheckoutPage extends ConsumerStatefulWidget {
@@ -16,6 +13,7 @@ class CheckoutPage extends ConsumerStatefulWidget {
   final int totalDays;
   final double totalPrice;
 
+  // HAPUS parameter discount dari sini agar tidak error di booking_page
   const CheckoutPage({
     super.key,
     required this.listing,
@@ -36,8 +34,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final _notesController = TextEditingController();
 
   String _selectedPayment = 'Transfer Bank BCA';
-
-  // LOGIKA EKSPANSI: Pengaturan Layanan Ongkos Kirim
   String _selectedShipping = 'Standard';
   double _shippingPrice = 15000;
 
@@ -67,17 +63,24 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   Widget build(BuildContext context) {
     final currencyFormat =
         NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-    final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
 
-    // Perhitungan Detailing Total Biaya Resmi Kelompok
     double itemDeposit = widget.listing.deposit?.toDouble() ?? 0.0;
-    double finalGrandTotal = widget.totalPrice + _shippingPrice + itemDeposit;
+
+    // Hitung diskon di sini, bukan di atas
+    double discount = 0.0;
+    if (widget.totalDays >= 7) {
+      discount = widget.totalPrice * 0.10; // Diskon 10%
+    }
+
+    double finalGrandTotal =
+        (widget.totalPrice - discount) + _shippingPrice + itemDeposit;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Formulir Checkout Penyewaan'),
+        title: const Text('Formulir Checkout Penyewaan',
+            style: TextStyle(fontSize: 16)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -91,44 +94,34 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               const Text('Data Pengirim & Penyewa',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Nama Lengkap Penerima',
-                  hintText: 'Masukkan nama asli sesuai KTP',
-                  border: OutlineInputBorder(),
-                ),
+                    labelText: 'Nama Lengkap Penerima',
+                    border: OutlineInputBorder()),
                 validator: (v) =>
                     v == null || v.isEmpty ? 'Nama wajib diisi' : null,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _addressController,
                 maxLines: 2,
                 decoration: const InputDecoration(
-                  labelText: 'Alamat Lengkap Pengiriman',
-                  hintText: 'Masukkan alamat pengiriman lengkap',
-                  border: OutlineInputBorder(),
-                ),
+                    labelText: 'Alamat Lengkap Pengiriman',
+                    border: OutlineInputBorder()),
                 validator: (v) =>
                     v == null || v.isEmpty ? 'Alamat wajib diisi' : null,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
                 decoration: const InputDecoration(
-                  labelText: 'Catatan Tambahan (opsional)',
-                  hintText: 'Contoh: Titip baterai cadangan, lensa hood, dll.',
-                  border: OutlineInputBorder(),
-                ),
+                    labelText: 'Catatan Tambahan (opsional)',
+                    border: OutlineInputBorder()),
               ),
               const SizedBox(height: 24),
 
-              // ── EKSPANSI SEKSI LINGKUP ONGKOS KIRIM ──
               const Text('Pilihan Opsi Pengiriman (Ongkir)',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
@@ -167,19 +160,39 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Divider()),
 
-              // ── SEKSI DETAILING TOTAL BIAYA (BREAKDOWN COST) ──
               const Text('Detailing Rincian Biaya Keseluruhan',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
+
+              // PERBAIKAN CONTAINER ERROR DISINI
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.divider),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
                 ),
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
+                    // Posisi blok IF yang benar adalah di dalam children Column
+                    if (widget.totalDays >= 7) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Diskon Sewa (7+ Hari -10%)',
+                              style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold)),
+                          Text('- ${currencyFormat.format(discount)}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -194,7 +207,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               const SizedBox(height: 2),
                               Text('Durasi: ${widget.totalDays} Hari',
                                   style: const TextStyle(
-                                      color: Colors.black54, fontSize: 12)),
+                                      color: Colors.grey, fontSize: 12)),
                             ],
                           ),
                         ),
@@ -209,7 +222,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       children: [
                         Text('Ongkos Kirim ($_selectedShipping)',
                             style: const TextStyle(
-                                color: Colors.black45, fontSize: 13)),
+                                color: Colors.grey, fontSize: 13)),
                         Text(currencyFormat.format(_shippingPrice),
                             style:
                                 const TextStyle(fontWeight: FontWeight.w500)),
@@ -219,17 +232,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Deposit Jaminan Barang (Aman/Refundable)',
-                            style:
-                                TextStyle(color: Colors.black45, fontSize: 13)),
+                        const Text('Deposit Jaminan (Refundable)',
+                            style: TextStyle(color: Colors.grey, fontSize: 13)),
                         Text(currencyFormat.format(itemDeposit),
                             style:
                                 const TextStyle(fontWeight: FontWeight.w500)),
                       ],
                     ),
-                    const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Divider(height: 1)),
+                    Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Divider(
+                            height: 1, color: Colors.grey.withOpacity(0.2))),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -240,7 +253,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           currencyFormat.format(finalGrandTotal),
                           style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                              color: Color(0xFF376BE0),
                               fontSize: 16),
                         ),
                       ],
@@ -257,19 +270,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF123BCA)),
                     onPressed: () async {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Memproses pesanan...')),
-                      );
-
-                      // Panggil fungsi createBooking dari provider
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Memproses pesanan...')));
                       final success =
                           await ref.read(bookingActionProvider).createBooking(
                                 listingId: widget.listing.id,
                                 listingTitle: widget.listing.title,
+                                lenderId: widget.listing.lenderId.toString(),
+                                startDate: widget.startDate,
+                                endDate: widget.endDate,
                                 totalPrice: finalGrandTotal,
                                 durationDays: widget.totalDays,
                               );
-
                       if (success) {
                         ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -277,7 +289,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               content: Text('Pesanan berhasil dibuat!'),
                               backgroundColor: Colors.green),
                         );
-                        // Kembali ke halaman utama / pindah ke tab Riwayat
                         Navigator.of(context)
                             .popUntil((route) => route.isFirst);
                       } else {
@@ -288,7 +299,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         );
                       }
                     },
-                    child: const Text('Buat Pesanan Sekarang'),
+                    child: const Text('Buat Pesanan Sekarang',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
                   )),
             ],
           ),

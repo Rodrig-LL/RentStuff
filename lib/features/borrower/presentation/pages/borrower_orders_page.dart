@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/booking_provider.dart';
 import 'order_detail_page.dart';
+import 'return_item_page.dart';
+import 'add_review_page.dart';
 
 class BorrowerOrdersPage extends ConsumerWidget {
   const BorrowerOrdersPage({super.key});
@@ -148,25 +150,61 @@ class BorrowerOrdersPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    if (isSelesai) ...[
+                    if (isSelesai ||
+                        booking.status.toLowerCase() == 'disetujui' ||
+                        booking.status.toLowerCase() == 'aktif') ...[
                       Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
                       Padding(
                         padding: const EdgeInsets.all(12),
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF376BE0)),
-                            minimumSize: const Size.fromHeight(40),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: () {},
-                          icon: const Icon(Icons.star_outline,
-                              size: 18, color: Color(0xFF376BE0)),
-                          label: const Text('Beri Ulasan',
-                              style: TextStyle(
-                                  color: Color(0xFF376BE0),
-                                  fontWeight: FontWeight.bold)),
-                        ),
+                        child: isSelesai
+                            ? OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                      color: Color(0xFF376BE0)),
+                                  minimumSize: const Size.fromHeight(40),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) =>
+                                              AddReviewPage(booking: booking)));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Membuka halaman form ulasan...'),
+                                        backgroundColor: Color(0xFF376BE0)),
+                                  );
+                                },
+                                icon: const Icon(Icons.star_outline,
+                                    size: 18, color: Color(0xFF376BE0)),
+                                label: const Text('Beri Ulasan',
+                                    style: TextStyle(
+                                        color: Color(0xFF376BE0),
+                                        fontWeight: FontWeight.bold)),
+                              )
+                            : ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF376BE0),
+                                  minimumSize: const Size.fromHeight(40),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                  elevation: 0,
+                                ),
+                                onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            ReturnItemPage(booking: booking))),
+                                icon: const Icon(Icons.local_shipping_outlined,
+                                    size: 18, color: Colors.white),
+                                label: const Text('Form Pengembalian',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold)),
+                              ),
                       )
                     ]
                   ],

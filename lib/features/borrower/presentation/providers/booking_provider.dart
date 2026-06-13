@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Jika menggunakan Firebase Auth
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:rentstuff/features/auth/presentation/providers/auth_provider.dart'; // Jika menggunakan Firebase Auth
 
 // 1. Model Entitas Pesanan
 class BookingEntity {
@@ -19,7 +20,6 @@ class BookingEntity {
   });
 }
 
-// 2. Class untuk fungsi Insert/Create ke Firebase
 class BookingNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -29,19 +29,24 @@ class BookingNotifier {
     required String listingTitle,
     required double totalPrice,
     required int durationDays,
+    required String lenderId,
+    required DateTime startDate,
+    required DateTime endDate,
   }) async {
     try {
-      // Ambil UID user yang sedang login (Atau gunakan 'user_demo' jika belum ada Auth)
       final String userId = _auth.currentUser?.uid ?? 'user_demo_123';
 
       await _firestore.collection('bookings').add({
         'borrowerId': userId,
         'listingId': listingId,
-        'listingTitle': listingTitle, // Disimpan agar mudah dibaca di riwayat
+        'listingTitle': listingTitle,
         'totalPrice': totalPrice,
-        'status': 'Menunggu', // Default status awal
+        'status': 'Menunggu',
         'durationDays': durationDays,
         'createdAt': Timestamp.now(),
+        'lenderId': lenderId,
+        'startDate': startDate,
+        'endDate': endDate,
       });
       return true;
     } catch (e) {
@@ -77,5 +82,43 @@ final myBookingsProvider =
             int.tryParse(data['durationDays']?.toString() ?? '1') ?? 1,
       );
     }).toList();
+  });
+});
+
+final borrowerStatsProvider =
+    StreamProvider.autoDispose<Map<String, dynamic>>((ref) {
+  final user = ref.watch(authStateProvider).value;
+  if (user == null)
+    return Stream.value({'totalBookings': 0, 'averageRating': 0.0});
+
+  return FirebaseFirestore.instance
+      .collection('bookings')
+      .where('borrowerId', isEqualTo: user.id.toString())
+      .snapshots()
+      .map((snapshot) {
+    final docs = snapshot.docs;
+    if (docs.isEmpty) {
+      return {'totalBookings': 0, 'averageRating': 0.0};
+    }
+
+    int totalBookings = docs.length;
+    double totalRating = 0;
+    int reviewedCount = 0;
+
+    for (var doc in docs) {
+      final data = doc.data();
+      if (data['isReviewed'] == true && data['reviewRating'] != null) {
+        totalRating += (data['reviewRating'] as num).toDouble();
+        reviewedCount++;
+      }
+    }
+
+    // Hitung rata-rata rating ulasan yang diberikan oleh user ini
+    double avgRating = reviewedCount > 0 ? totalRating / reviewedCount : 0.0;
+
+    return {
+      'totalBookings': totalBookings,
+      'averageRating': avgRating,
+    };
   });
 });

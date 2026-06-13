@@ -1,112 +1,130 @@
-// lib/features/borrower/presentation/pages/my_reviews_page.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:intl/intl.dart';
+import 'package:rentstuff/features/auth/presentation/providers/auth_provider.dart';
 
-class MyReviewsPage extends StatelessWidget {
+final myReviewsProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('bookings')
+      .snapshots()
+      .map((snapshot) {
+    final allBookings = snapshot.docs.map((doc) => doc.data()).toList();
+
+    print("DEBUG: TOTAL DOKUMEN DI KOLEKSI BOOKINGS: ${allBookings.length}");
+
+    for (var b in allBookings) {
+      print("DEBUG: Dokumen ada dengan borrowerId: ${b['borrowerId']}");
+    }
+
+    return allBookings
+        .where((booking) => booking['isReviewed'] == true)
+        .toList();
+  });
+});
+
+class MyReviewsPage extends ConsumerWidget {
   const MyReviewsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Data dummy daftar ulasan yang pernah diberikan borrower
-    final List<Map<String, dynamic>> reviews = [
-      {
-        'title': 'Sony A7III + Lensa 24-70mm',
-        'date': '12 Mei 2026',
-        'rating': 5,
-        'comment':
-            'Kondisi kamera sangat prima, lensa bersih bebas jamur. Owner ramah banget pas COD!'
-      },
-      {
-        'title': 'Tenda Camping 4 Orang Coleman',
-        'date': '24 April 2026',
-        'rating': 4,
-        'comment':
-            'Tenda berfungsi dengan baik, waterproof aman. Sedikit kotor di lipatan bawah tapi overall memuaskan.'
-      }
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviewsAsync = ref.watch(myReviewsProvider);
+    final dateFormat = DateFormat('dd MMMM yyyy', 'id_ID');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        elevation: 0,
         title: const Text('Ulasan Saya',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
+          icon: Icon(Icons.arrow_back_ios,
+              size: 18, color: Theme.of(context).iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: Colors.grey.withOpacity(0.2), height: 1),
+        ),
       ),
-      body: reviews.isEmpty
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.star_outline_rounded,
-                      size: 64, color: Colors.black26),
-                  SizedBox(height: 12),
-                  Text('Belum ada ulasan yang Anda berikan',
-                      style: TextStyle(color: Colors.black45)),
-                ],
-              ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: reviews.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) {
-                final rev = reviews[i];
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.black12),
-                    color: Colors.white,
-                  ),
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              rev['title'],
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Color(0xFF123BCA)),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+      body: reviewsAsync.when(
+        loading: () => const Center(
+            child: CircularProgressIndicator(color: Color(0xFF123BCA))),
+        error: (error, _) => Center(child: Text('Terjadi kesalahan: $error')),
+        data: (reviews) {
+          if (reviews.isEmpty) {
+            return const Center(
+              child: Text('Anda belum memberikan ulasan apa pun.',
+                  style: TextStyle(color: Colors.grey)),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: reviews.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final review = reviews[index];
+
+              // Mengambil tanggal selesainya pesanan sebagai tanggal ulasan
+              final dateObj =
+                  (review['endDate'] as Timestamp?)?.toDate() ?? DateTime.now();
+              final dateString = dateFormat.format(dateObj);
+
+              // Mengambil data ulasan
+              final rating = (review['reviewRating'] ?? 0).toDouble();
+              final reviewText =
+                  review['reviewText'] ?? 'Tidak ada teks ulasan.';
+              final title = review['listingTitle'] ?? 'Barang Sewaan';
+
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: Color(0xFF123BCA)),
                           ),
-                          Text(rev['date'],
-                              style: const TextStyle(
-                                  fontSize: 11, color: Colors.black45)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      // Baris Bintang Rating
-                      Row(
-                        children: List.generate(5, (index) {
-                          return Icon(
-                            Icons.star_rounded,
-                            size: 16,
-                            color: index < rev['rating']
-                                ? const Color(0xFFFACC15)
-                                : Colors.black12,
-                          );
-                        }),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        rev['comment'],
-                        style: const TextStyle(
-                            fontSize: 13, color: Colors.black87, height: 1.4),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                        ),
+                        Text(dateString,
+                            style: const TextStyle(
+                                fontSize: 11, color: Colors.grey)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    RatingBarIndicator(
+                      rating: rating,
+                      itemSize: 16,
+                      itemBuilder: (_, __) => const Icon(Icons.star_rounded,
+                          color: Color(0xFFFACC15)),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(reviewText,
+                        style: const TextStyle(fontSize: 13, height: 1.5)),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

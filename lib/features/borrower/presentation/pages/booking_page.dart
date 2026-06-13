@@ -4,9 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../providers/listing_provider.dart';
-import 'checkout_page.dart'; // Pastikan import ke checkout_page
+import 'checkout_page.dart';
 
 class BookingFormState {
   final DateTime? startDate;
@@ -19,14 +18,12 @@ class BookingFormState {
     this.isLoading = false,
   });
 
-  // LOGIKA BARU: Jika baru pilih 1 tanggal (endDate null), durasi otomatis dihitung 1 hari (hari yang sama)
   int get totalDays {
     if (startDate == null) return 0;
     if (endDate == null) return 1;
     return endDate!.difference(startDate!).inDays + 1;
   }
 
-  // Cukup pastikan startDate sudah dipilih, maka pemesanan sudah dianggap valid
   bool get isValid => startDate != null;
 
   BookingFormState copyWith({
@@ -42,274 +39,393 @@ class BookingFormState {
   }
 }
 
-final bookingFormProvider =
-    StateNotifierProvider.autoDispose<BookingFormNotifier, BookingFormState>(
-  (_) => BookingFormNotifier(),
-);
-
 class BookingFormNotifier extends StateNotifier<BookingFormState> {
   BookingFormNotifier() : super(const BookingFormState());
 
-  void selectRange(DateTime? start, DateTime? end) {
-    state = state.copyWith(
-      startDate: start,
-      endDate: end,
-    );
+  void onDateSelected(DateTime selectedDate) {
+    if (state.endDate != null && isSameDay(selectedDate, state.endDate)) {
+      state = BookingFormState(startDate: state.startDate, endDate: null);
+      return;
+    }
+
+    if (state.startDate != null && isSameDay(selectedDate, state.startDate)) {
+      state = const BookingFormState();
+      return;
+    }
+
+    if (state.startDate == null ||
+        (state.startDate != null && state.endDate != null)) {
+      state = BookingFormState(startDate: selectedDate, endDate: null);
+    } else if (selectedDate.isBefore(state.startDate!)) {
+      state = BookingFormState(startDate: selectedDate, endDate: null);
+    } else {
+      state =
+          BookingFormState(startDate: state.startDate, endDate: selectedDate);
+    }
   }
 }
 
+final bookingFormProvider =
+    StateNotifierProvider<BookingFormNotifier, BookingFormState>((ref) {
+  return BookingFormNotifier();
+});
+
+// ── 2. WIDGET HALAMAN UTAMA ──
 class BookingPage extends ConsumerWidget {
+  // Menerima parameter dari Router
   final String listingId;
+
   const BookingPage({super.key, required this.listingId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final listings = ref.watch(listingsProvider);
+    // Memanggil provider yang ada di baris atas tadi
     final bookingForm = ref.watch(bookingFormProvider);
+    final bookingFormNotifier = ref.read(bookingFormProvider.notifier);
+
+    // Mengambil data listing
+    final listingsAsync = ref.watch(listingsProvider);
     final currencyFormat =
         NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-    final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
 
-    return listings.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text(e.toString()))),
+    return listingsAsync.when(
+      loading: () => const Scaffold(
+          body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF123BCA)))),
+      error: (error, _) =>
+          Scaffold(body: Center(child: Text('Terjadi kesalahan: $error'))),
       data: (items) {
+        // Cari barang berdasarkan ID
         final listing = items.firstWhere(
           (l) => l.id.toString() == listingId,
           orElse: () => items.first,
         );
 
-        // Hitung total harga
         final totalPrice = bookingForm.totalDays * listing.pricePerDay;
 
         return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            title: const Text('Pilih Tanggal Sewa'),
+            backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+            elevation: 0,
+            title: const Text(
+              'Pilih Tanggal Sewa',
+              style: TextStyle(
+                  color: Color(0xFF123BCA), fontWeight: FontWeight.bold),
+            ),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios),
-              onPressed: () => context.pop(),
+              icon: Icon(Icons.arrow_back_ios,
+                  size: 18, color: Theme.of(context).iconTheme.color),
+              onPressed: () => Navigator.pop(context),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(color: Colors.grey.withOpacity(0.2), height: 1),
             ),
           ),
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Listing Summary
-                Container(
-                  margin: const EdgeInsets.all(20),
+          body: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgCard,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Info Singkat Barang
                       Container(
-                        width: 60,
-                        height: 60,
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(12),
+                          border:
+                              Border.all(color: Colors.grey.withOpacity(0.2)),
                         ),
-                        child: const Icon(Icons.inventory_2_outlined,
-                            color: AppColors.primary),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Text(listing.title,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary),
-                                maxLines: 2),
-                            Text(
-                              '${currencyFormat.format(listing.pricePerDay)}/hari',
-                              style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w700),
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF123BCA).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.image_outlined,
+                                  color: Color(0xFF123BCA)),
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Calendar (Hanya menggunakan onRangeSelected agar mulus sekali klik)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: TableCalendar(
-                    firstDay: DateTime.now(),
-                    lastDay: DateTime.now().add(const Duration(days: 365)),
-                    focusedDay: bookingForm.startDate ?? DateTime.now(),
-                    calendarFormat: CalendarFormat.month,
-                    rangeStartDay: bookingForm.startDate,
-                    rangeEndDay: bookingForm.endDate,
-                    rangeSelectionMode: RangeSelectionMode.enforced,
-                    onRangeSelected: (start, end, _) {
-                      ref
-                          .read(bookingFormProvider.notifier)
-                          .selectRange(start, end);
-                    },
-                    calendarStyle: const CalendarStyle(
-                      rangeHighlightColor: AppColors.primaryLight,
-                      rangeStartDecoration: BoxDecoration(
-                          color: AppColors.primary, shape: BoxShape.circle),
-                      rangeEndDecoration: BoxDecoration(
-                          color: AppColors.primary, shape: BoxShape.circle),
-                      todayDecoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          shape: BoxShape.circle),
-                      todayTextStyle: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600),
-                      selectedDecoration: BoxDecoration(
-                          color: AppColors.primary, shape: BoxShape.circle),
-                    ),
-                    headerStyle: const HeaderStyle(
-                      formatButtonVisible: false,
-                      titleCentered: true,
-                      titleTextStyle:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                    ),
-                  ),
-                ),
-
-                // Date Summary
-                if (bookingForm.startDate != null)
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Column(
-                          children: [
-                            const Text('Mulai',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary)),
-                            Text(
-                              dateFormat.format(bookingForm.startDate!),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary),
-                            ),
-                          ],
-                        ),
-                        const Icon(Icons.arrow_forward_rounded,
-                            color: AppColors.primary),
-                        Column(
-                          children: [
-                            const Text('Selesai',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary)),
-                            Text(
-                              // Jika endDate null, tampilkan tanggal yang sama dengan startDate
-                              dateFormat.format(bookingForm.endDate ??
-                                  bookingForm.startDate!),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            const Text('Durasi',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary)),
-                            Text(
-                              '${bookingForm.totalDays} hari',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 100),
-              ],
-            ),
-          ),
-
-          // Bottom bar dengan Total Harga
-          bottomNavigationBar: Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.bgCard,
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 12,
-                    offset: Offset(0, -4))
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (bookingForm.isValid) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${currencyFormat.format(listing.pricePerDay)} × ${bookingForm.totalDays} hari',
-                        style: const TextStyle(color: AppColors.textSecondary),
-                      ),
-                      Text(
-                        currencyFormat.format(totalPrice),
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF123BCA),
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                  onPressed: bookingForm.isValid
-                      ? () {
-                          // Pindah ke halaman checkout membawa data tanggal yang sah
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CheckoutPage(
-                                listing: listing,
-                                startDate: bookingForm.startDate!,
-                                endDate: bookingForm.endDate ??
-                                    bookingForm
-                                        .startDate!, // Amankan hari yang sama
-                                totalDays: bookingForm.totalDays,
-                                totalPrice: totalPrice.toDouble(),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    listing.title,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${currencyFormat.format(listing.pricePerDay)}/hari',
+                                    style: const TextStyle(
+                                        color: Color(0xFF123BCA),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13),
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        }
-                      : null,
-                  child: Text(bookingForm.isValid
-                      ? 'Konfirmasi Pemesanan'
-                      : 'Pilih Tanggal Terlebih Dahulu'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      const Text('Pilih Rentang Tanggal',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15)),
+                      const SizedBox(height: 12),
+                      Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: Color(0xFF123BCA),
+                            onPrimary: Colors.white,
+                            onSurface: Colors.black87,
+                          ),
+                        ),
+                        child: TableCalendar(
+                          firstDay: DateTime.now(),
+                          lastDay: DateTime.now().add(const Duration(days: 90)),
+                          focusedDay: bookingForm.startDate ?? DateTime.now(),
+                          currentDay: DateTime.now(),
+                          rangeStartDay: bookingForm.startDate,
+                          rangeEndDay: bookingForm.endDate,
+                          calendarFormat: CalendarFormat.month,
+                          rangeSelectionMode: RangeSelectionMode.enforced,
+                          onDaySelected: (selectedDay, focusedDay) {
+                            bookingFormNotifier.onDateSelected(selectedDay);
+                          },
+                          headerStyle: const HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                          ),
+                          calendarStyle: const CalendarStyle(
+                            rangeHighlightColor: Color(0xFFD6E4FF),
+                            rangeStartDecoration: BoxDecoration(
+                                color: Color(0xFF123BCA),
+                                shape: BoxShape.circle),
+                            rangeEndDecoration: BoxDecoration(
+                                color: Color(0xFF123BCA),
+                                shape: BoxShape.circle),
+                            todayDecoration: BoxDecoration(
+                                color: Colors.transparent,
+                                shape: BoxShape.circle),
+                            todayTextStyle: TextStyle(
+                                color: Color(0xFF123BCA),
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      if (bookingForm.isValid) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border:
+                                Border.all(color: Colors.grey.withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Mulai Sewa',
+                                      style: TextStyle(color: Colors.grey)),
+                                  Text(
+                                    DateFormat('dd MMM yyyy', 'id_ID')
+                                        .format(bookingForm.startDate!),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Selesai Sewa',
+                                      style: TextStyle(color: Colors.grey)),
+                                  Text(
+                                    DateFormat('dd MMM yyyy', 'id_ID').format(
+                                        bookingForm.endDate ??
+                                            bookingForm.startDate!),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 24),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Total Durasi',
+                                      style: TextStyle(color: Colors.grey)),
+                                  Text(
+                                    '${bookingForm.totalDays} Hari',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF123BCA)),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 24),
+                              // ── TAMBAHAN REVISI DOSEN: Info Deposit Sebelum Nyewa ──
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Total Sewa Barang',
+                                      style: TextStyle(color: Colors.grey)),
+                                  Text(
+                                    currencyFormat.format(totalPrice),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                              if (listing.deposit != null) ...[
+                                const SizedBox(height: 10),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Deposit Jaminan (Wajib)',
+                                        style: TextStyle(color: Colors.grey)),
+                                    Text(
+                                      currencyFormat.format(listing.deposit),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orange),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+
+              // Bottom Bar Area untuk Tombol Konfirmasi
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  border: Border(
+                      top: BorderSide(color: Colors.grey.withOpacity(0.2))),
+                ),
+                child: SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ── REVISI DOSEN: Batasi durasi peminjaman (Maks 7 Hari) ──
+                      if (bookingForm.isValid && bookingForm.totalDays > 7) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.error_outline,
+                                  color: Colors.red, size: 18),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Durasi sewa melebihi batas maksimal yang ditentukan pemilik (Maksimal 7 hari).',
+                                  style: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Estimasi Sewa:',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 13)),
+                          Text(
+                            currencyFormat.format(totalPrice),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Color(0xFF123BCA)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Logika Tombol Validasi
+                      Builder(builder: (context) {
+                        final bool isDurationValid = bookingForm.totalDays <= 7;
+                        final bool isFormValid =
+                            bookingForm.isValid && isDurationValid;
+
+                        return ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isFormValid
+                                ? const Color(0xFF123BCA)
+                                : Colors.grey.withOpacity(0.5),
+                            minimumSize: const Size(double.infinity, 48),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
+                          onPressed: isFormValid
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CheckoutPage(
+                                        listing: listing,
+                                        startDate: bookingForm.startDate!,
+                                        endDate: bookingForm.endDate ??
+                                            bookingForm.startDate!,
+                                        totalDays: bookingForm.totalDays,
+                                        totalPrice: totalPrice.toDouble(),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          child: Text(
+                            !bookingForm.isValid
+                                ? 'Pilih Tanggal Terlebih Dahulu'
+                                : !isDurationValid
+                                    ? 'Durasi Melebihi Batas (Maks 7 Hari)'
+                                    : 'Konfirmasi Pemesanan',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },

@@ -1,3 +1,4 @@
+// lib/features/borrower/presentation/pages/borrower_profile_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,21 +8,48 @@ import 'Profile_Page/my_reviews_page.dart';
 import 'Profile_Page/help_center_page.dart';
 import 'Profile_Page/settings_page.dart';
 
+// 1. PROVIDER DIPERBARUI: Mengambil Total Pinjam, Sedang Dipinjam, DAN Rating
 final profileStatsProvider =
-    StreamProvider.autoDispose<Map<String, int>>((ref) {
+    StreamProvider.autoDispose<Map<String, dynamic>>((ref) {
   final user = ref.watch(authStateProvider).value;
-  if (user == null) return Stream.value({'total': 0, 'active': 0});
+  if (user == null) {
+    return Stream.value(
+        {'total': 0, 'active': 0, 'averageRating': 0.0, 'reviewCount': 0});
+  }
+
   return FirebaseFirestore.instance
       .collection('bookings')
       .where('borrowerId', isEqualTo: user.id.toString())
       .snapshots()
       .map((snapshot) {
     int total = snapshot.docs.length;
+
     int active = snapshot.docs.where((doc) {
       final status = (doc.data()['status'] ?? '').toString().toLowerCase();
       return status != 'selesai' && status != 'dibatalkan';
     }).length;
-    return {'total': total, 'active': active};
+
+    double totalRating = 0;
+    int reviewedCount = 0;
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+
+      final bool isReviewedByLender = data['isReviewedByLender'] ?? false;
+      final dynamic lenderRating = data['lenderRating'];
+
+      if (isReviewedByLender == true && lenderRating != null) {
+        totalRating += (lenderRating as num).toDouble();
+        reviewedCount++;
+      }
+    }
+    double avgRating = reviewedCount > 0 ? totalRating / reviewedCount : 0.0;
+
+    return {
+      'total': total,
+      'active': active,
+      'averageRating': avgRating,
+      'reviewCount': reviewedCount,
+    };
   });
 });
 
@@ -38,6 +66,7 @@ class BorrowerProfilePage extends ConsumerWidget {
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
+            // HEADER
             Container(
               decoration: BoxDecoration(
                   border: Border(
@@ -52,6 +81,8 @@ class BorrowerProfilePage extends ConsumerWidget {
                           fontWeight: FontWeight.bold))),
             ),
             const SizedBox(height: 20),
+
+            // AVATAR
             Container(
               width: 100,
               height: 100,
@@ -69,66 +100,91 @@ class BorrowerProfilePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            // HAPUS Colors.black, biarkan menyesuaikan tema otomatis
+
+            // NAMA & EMAIL
             Text(user?.name ?? 'Pengguna',
                 style:
                     const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(user?.email ?? 'Belum ada email',
                 style: const TextStyle(color: Colors.grey, fontSize: 13)),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: const Color(0xFFFDC612)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-                  child: const Row(children: [
-                    Icon(Icons.star_rounded, size: 16, color: Colors.black),
-                    SizedBox(width: 4),
-                    Text('4.7',
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold))
-                  ]),
-                ),
-                const SizedBox(width: 8),
-                const Text('(46 Rating)',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 28),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: statsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, s) =>
-                    const Center(child: Text('Gagal memuat statistik')),
-                data: (stats) => Row(
+            const SizedBox(height: 16),
+
+            // ── BUNGKUSAN DATA ASLI (RATING & STATS) ──
+            statsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, s) => const Center(
+                  child: Text('Gagal memuat statistik',
+                      style: TextStyle(color: Colors.red))),
+              data: (stats) {
+                final double avgRating = stats['averageRating'] ?? 0.0;
+                final int reviewCount = stats['reviewCount'] ?? 0;
+                final int totalPinjam = stats['total'] ?? 0;
+                final int sedangDipinjam = stats['active'] ?? 0;
+
+                return Column(
                   children: [
-                    Expanded(
-                        child: _StatCard(
-                            label: 'Total Pinjam',
-                            value: stats['total'].toString())),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: _StatCard(
-                            label: 'Sedang Dipinjam',
-                            value: stats['active'].toString())),
+                    // 1. RATING ASLI & TEKS RATING PEMESANAN
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              color: const Color(0xFFFDC612)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 13, vertical: 6),
+                          child: Row(children: [
+                            const Icon(Icons.star_rounded,
+                                size: 16, color: Colors.black),
+                            const SizedBox(width: 4),
+                            Text(
+                                avgRating > 0
+                                    ? avgRating.toStringAsFixed(1)
+                                    : '-',
+                                style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold))
+                          ]),
+                        ),
+                        const SizedBox(width: 8),
+                        Text('($reviewCount Rating Pemesanan)',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+
+                    // 2. KOTAK TOTAL PINJAM & SEDANG DIPINJAM ASLI
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: _StatCard(
+                                  label: 'Total Pinjam',
+                                  value: totalPinjam.toString())),
+                          const SizedBox(width: 16),
+                          Expanded(
+                              child: _StatCard(
+                                  label: 'Sedang Dipinjam',
+                                  value: sedangDipinjam.toString())),
+                        ],
+                      ),
+                    ),
                   ],
-                ),
-              ),
+                );
+              },
             ),
+            // ── AKHIR DATA ASLI ──
+
             const SizedBox(height: 24),
+
+            // MENU APLIKASI
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
-                // GUNAKAN cardColor dari tema, bukan Colors.white
                 decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.withOpacity(0.2)),
                     borderRadius: BorderRadius.circular(12),
@@ -171,6 +227,8 @@ class BorrowerProfilePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
+
+            // TOMBOL LOGOUT
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
@@ -198,6 +256,7 @@ class BorrowerProfilePage extends ConsumerWidget {
   }
 }
 
+// WIDGET CARD STATS
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;
@@ -205,7 +264,6 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Border warna abu transparan agar cocok di mode gelap maupun terang
       decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.withOpacity(0.3)),
           borderRadius: BorderRadius.circular(10)),
@@ -213,21 +271,21 @@ class _StatCard extends StatelessWidget {
       child: Column(
         children: [
           Text(label,
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold)), // Dihapus Colors.black
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text(value,
               style: const TextStyle(
                   color: Color(0xFF376BE0),
                   fontSize: 22,
-                  fontWeight: FontWeight.bold)), // Diubah agar biru lebih pas
+                  fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 }
 
+// WIDGET MENU ITEM
 class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -248,7 +306,7 @@ class _MenuItem extends StatelessWidget {
               Icon(icon, size: 20, color: const Color(0xFF376BE0)),
               const SizedBox(width: 12),
               Text(label, style: const TextStyle(fontSize: 15))
-            ]), // Dihapus Colors.black
+            ]),
             const Icon(Icons.chevron_right_rounded, color: Colors.grey),
           ],
         ),

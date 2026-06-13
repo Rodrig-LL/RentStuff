@@ -34,15 +34,16 @@ class ChatMessage {
   }
 
   Map<String, dynamic> toFirestore() => {
-    'sender_id': senderId,
-    'sender_name': senderName,
-    'text': text,
-    'created_at': Timestamp.fromDate(createdAt),
-  };
+        'sender_id': senderId,
+        'sender_name': senderName,
+        'text': text,
+        'created_at': Timestamp.fromDate(createdAt),
+      };
 }
 
 // Firestore stream provider
-final chatMessagesProvider = StreamProvider.family<List<ChatMessage>, String>((ref, roomId) {
+final chatMessagesProvider =
+    StreamProvider.family<List<ChatMessage>, String>((ref, roomId) {
   return FirebaseFirestore.instance
       .collection('chat_rooms')
       .doc(roomId)
@@ -102,9 +103,9 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
           .collection('chat_rooms')
           .doc(widget.roomId)
           .set({
-            'last_message': text,
-            'last_message_at': Timestamp.now(),
-          }, SetOptions(merge: true));
+        'last_message': text,
+        'last_message_at': Timestamp.now(),
+      }, SetOptions(merge: true));
 
       // Scroll to bottom
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -118,7 +119,9 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengirim pesan: $e'), backgroundColor: AppColors.error),
+        SnackBar(
+            content: Text('Gagal mengirim pesan: $e'),
+            backgroundColor: AppColors.error),
       );
     } finally {
       setState(() => _isSending = false);
@@ -134,21 +137,26 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => context.pop(),
+          onPressed: () => context.pop(), // Kembali ke halaman orders
         ),
         title: Row(
           children: [
             const CircleAvatar(
               radius: 18,
               backgroundColor: AppColors.primaryLight,
-              child: Text('B', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
+              child: Text('B',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, color: AppColors.primary)),
             ),
             const SizedBox(width: 10),
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Budi Santoso', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                Text('Online', style: TextStyle(fontSize: 11, color: AppColors.secondary)),
+                Text('Budi Santoso',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                Text('Online',
+                    style: TextStyle(fontSize: 11, color: AppColors.secondary)),
               ],
             ),
           ],
@@ -166,9 +174,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.chat_outlined, size: 48, color: AppColors.textHint),
+                          Icon(Icons.chat_outlined,
+                              size: 48, color: AppColors.textHint),
                           SizedBox(height: 8),
-                          Text('Mulai percakapan', style: TextStyle(color: AppColors.textSecondary)),
+                          Text('Mulai percakapan',
+                              style: TextStyle(color: AppColors.textSecondary)),
                         ],
                       ),
                     )
@@ -188,9 +198,12 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
           // Input bar
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.bgCard,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))],
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              boxShadow: const [
+                BoxShadow(
+                    color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))
+              ],
             ),
             child: Row(
               children: [
@@ -201,7 +214,8 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
                       hintText: 'Tulis pesan...',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: const BorderSide(color: AppColors.divider),
@@ -222,7 +236,8 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                 GestureDetector(
                   onTap: _isSending ? null : _sendMessage,
                   child: Container(
-                    width: 46, height: 46,
+                    width: 46,
+                    height: 46,
                     decoration: BoxDecoration(
                       color: _isSending ? AppColors.divider : AppColors.primary,
                       shape: BoxShape.circle,
@@ -230,9 +245,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                     child: _isSending
                         ? const Padding(
                             padding: EdgeInsets.all(12),
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
                           )
-                        : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                        : const Icon(Icons.send_rounded,
+                            color: Colors.white, size: 20),
                   ),
                 ),
               ],
@@ -271,7 +288,10 @@ class _MessageBubble extends StatelessWidget {
           ),
           border: isMe ? null : Border.all(color: AppColors.divider),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -279,12 +299,17 @@ class _MessageBubble extends StatelessWidget {
           children: [
             Text(
               message.text,
-              style: TextStyle(color: isMe ? Colors.white : AppColors.textPrimary, fontSize: 14, height: 1.4),
+              style: TextStyle(
+                  color: isMe ? Colors.white : AppColors.textPrimary,
+                  fontSize: 14,
+                  height: 1.4),
             ),
             const SizedBox(height: 4),
             Text(
               '${message.createdAt.hour.toString().padLeft(2, '0')}:${message.createdAt.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : AppColors.textHint),
+              style: TextStyle(
+                  fontSize: 10,
+                  color: isMe ? Colors.white70 : AppColors.textHint),
             ),
           ],
         ),

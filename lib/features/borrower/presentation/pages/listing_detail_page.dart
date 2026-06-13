@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../providers/listing_provider.dart';
 
@@ -18,11 +17,15 @@ class ListingDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listings = ref.watch(listingsProvider);
     final currencyFormat = NumberFormat.currency(
-      locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0,
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
     );
 
     return listings.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(
+          body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF376BE0)))),
       error: (e, _) => Scaffold(body: Center(child: Text(e.toString()))),
       data: (items) {
         final listing = items.firstWhere(
@@ -40,30 +43,34 @@ class ListingDetailPage extends ConsumerWidget {
     NumberFormat currencyFormat,
   ) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          // Photo Header
+          // ── Photo Header ──
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
-            backgroundColor: AppColors.bgCard,
+            backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
             leading: Padding(
               padding: const EdgeInsets.all(8),
               child: CircleAvatar(
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).cardColor.withOpacity(0.8),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, size: 18),
-                  onPressed: () => context.pop(),
-                ),
+                    icon: Icon(Icons.arrow_back_ios,
+                        size: 18, color: Theme.of(context).iconTheme.color),
+                    onPressed: () {
+                      context.pop('/');
+                    }),
               ),
             ),
             actions: [
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: CircleAvatar(
-                  backgroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).cardColor.withOpacity(0.8),
                   child: IconButton(
-                    icon: const Icon(Icons.favorite_border_rounded, size: 18),
+                    icon: Icon(Icons.favorite_border_rounded,
+                        size: 18, color: Theme.of(context).iconTheme.color),
                     onPressed: () {},
                   ),
                 ),
@@ -76,8 +83,10 @@ class ListingDetailPage extends ConsumerWidget {
                       fit: BoxFit.cover,
                     )
                   : Container(
-                      color: AppColors.primaryLight,
-                      child: const Icon(Icons.image_outlined, size: 64, color: AppColors.primary),
+                      // TRANPARANSI UNTUK GAMBAR PLACEHOLDER AGAR ELEGAN DI DARK MODE
+                      color: const Color(0xFF376BE0).withOpacity(0.1),
+                      child: const Icon(Icons.image_outlined,
+                          size: 64, color: Color(0xFF376BE0)),
                     ),
             ),
           ),
@@ -88,33 +97,42 @@ class ListingDetailPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category + Status
+                  // ── Category + Status ──
                   Row(
                     children: [
                       if (listing.categoryName != null)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
+                            color: const Color(0xFF376BE0).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             listing.categoryName!,
-                            style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF376BE0),
+                                fontWeight: FontWeight.w600),
                           ),
                         ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: listing.isAvailable ? AppColors.secondaryLight : Colors.orange.shade50,
+                          color: listing.isAvailable
+                              ? Colors.green.withOpacity(0.15)
+                              : Colors.orange.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           listing.isAvailable ? 'Tersedia' : 'Tidak Tersedia',
                           style: TextStyle(
                             fontSize: 12,
-                            color: listing.isAvailable ? AppColors.secondary : Colors.orange,
+                            color: listing.isAvailable
+                                ? Colors.green
+                                : Colors.orange,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -123,45 +141,53 @@ class ListingDetailPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
+                  // Teks Judul Utama (Warna Kaku Dihapus)
                   Text(
                     listing.title,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
 
-                  // Rating & Location
+                  // ── Rating & Location ──
                   Row(
                     children: [
                       if (listing.averageRating != null) ...[
                         RatingBarIndicator(
                           rating: listing.averageRating!,
                           itemSize: 16,
-                          itemBuilder: (_, __) => const Icon(Icons.star_rounded, color: AppColors.accent),
+                          itemBuilder: (_, __) => const Icon(Icons.star_rounded,
+                              color: Color(0xFFFACC15)),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${listing.averageRating!.toStringAsFixed(1)} (${listing.reviewCount} ulasan)',
-                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style:
+                              const TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                         const SizedBox(width: 12),
                       ],
                       if (listing.location != null)
                         Row(
                           children: [
-                            const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
-                            Text(listing.location!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                            const Icon(Icons.location_on_outlined,
+                                size: 14, color: Colors.grey),
+                            Text(listing.location!,
+                                style: const TextStyle(
+                                    fontSize: 13, color: Colors.grey)),
                           ],
                         ),
                     ],
                   ),
                   const SizedBox(height: 20),
 
-                  // Price & Deposit
+                  // ── Price & Deposit ──
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -169,10 +195,15 @@ class ListingDetailPage extends ConsumerWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Harga Sewa', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            const Text('Harga Sewa',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey)),
                             Text(
                               '${currencyFormat.format(listing.pricePerDay)}/hari',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary),
+                              style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF376BE0)),
                             ),
                           ],
                         ),
@@ -180,10 +211,13 @@ class ListingDetailPage extends ConsumerWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              const Text('Deposit', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              const Text('Deposit',
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey)),
                               Text(
                                 currencyFormat.format(listing.deposit),
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                style: const TextStyle(
+                                    fontSize: 15, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -192,44 +226,60 @@ class ListingDetailPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Condition
+                  // ── Condition ──
                   Row(
                     children: [
-                      const Text('Kondisi: ', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      const Text('Kondisi: ',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.secondaryLight,
+                          color: Colors.green.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           listing.conditionLabel,
-                          style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600, fontSize: 12),
+                          style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
-                  // Description
-                  const Text('Deskripsi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  // ── Description ──
+                  const Text('Deskripsi',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
-                  Text(listing.description, style: const TextStyle(color: AppColors.textSecondary, height: 1.6)),
+                  Text(listing.description,
+                      style: const TextStyle(color: Colors.grey, height: 1.6)),
                   const SizedBox(height: 20),
 
-                  // Lender Info
-                  const Divider(color: AppColors.divider),
+                  // ── Lender Info ──
+                  Divider(color: Colors.grey.withOpacity(0.2)),
                   const SizedBox(height: 16),
-                  const Text('Tentang Pemilik', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  const Text('Tentang Pemilik',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 24,
-                        backgroundColor: AppColors.primaryLight,
+                        backgroundColor:
+                            const Color(0xFF376BE0).withOpacity(0.1),
                         child: Text(
-                          (listing.lenderName ?? 'U').substring(0, 1).toUpperCase(),
-                          style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 18),
+                          (listing.lenderName ?? 'U')
+                              .substring(0, 1)
+                              .toUpperCase(),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF376BE0),
+                              fontSize: 18),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -239,28 +289,36 @@ class ListingDetailPage extends ConsumerWidget {
                           children: [
                             Text(
                               listing.lenderName ?? 'Pemilik',
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             if (listing.lenderRating != null)
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded, size: 14, color: AppColors.accent),
+                                  const Icon(Icons.star_rounded,
+                                      size: 14, color: Color(0xFFFACC15)),
                                   const SizedBox(width: 2),
                                   Text(
                                     listing.lenderRating!.toStringAsFixed(1),
-                                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Colors.grey),
                                   ),
-                                  const Text(' rating pemilik', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                  const Text(' rating pemilik',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.grey)),
                                 ],
                               ),
                           ],
                         ),
                       ),
                       OutlinedButton.icon(
-                        onPressed: () => context.go('/chats/new?lenderId=${listing.lenderId}'),
-                        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                        onPressed: () => context
+                            .push('/chats/new?lenderId=${listing.lenderId}'),
+                        icon: const Icon(Icons.chat_bubble_outline_rounded,
+                            size: 16),
                         label: const Text('Chat'),
-                        style: OutlinedButton.styleFrom(minimumSize: const Size(80, 36)),
+                        style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(80, 36)),
                       ),
                     ],
                   ),
@@ -272,26 +330,45 @@ class ListingDetailPage extends ConsumerWidget {
         ],
       ),
 
-      // Bottom Action
+      // ── Bottom Action ──
       bottomNavigationBar: listing.isAvailable
           ? Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              decoration: const BoxDecoration(
-                color: AppColors.bgCard,
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, -4))],
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                border: Border(
+                    top: BorderSide(color: Colors.grey.withOpacity(0.2))),
               ),
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF376BE0),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
                 onPressed: () => context.go('/borrower/booking/$listingId'),
-                child: const Text('Pesan Sekarang'),
+                // TEKS TOMBOL DIBERI WARNA PUTIH AGAR TERBACA
+                child: const Text('Pesan Sekarang',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             )
           : Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              decoration: const BoxDecoration(color: AppColors.bgCard),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                border: Border(
+                    top: BorderSide(color: Colors.grey.withOpacity(0.2))),
+              ),
               child: ElevatedButton(
                 onPressed: null,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.divider),
-                child: const Text('Tidak Tersedia'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.withOpacity(0.2),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Tidak Tersedia',
+                    style: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.bold)),
               ),
             ),
     );
