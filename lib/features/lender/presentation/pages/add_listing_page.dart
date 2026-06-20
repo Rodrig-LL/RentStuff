@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+import '../../../../core/services/cloudinary_service.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 final _conditionOptions = [
   {'value': 'new', 'label': 'Baru'},
@@ -40,8 +44,19 @@ class _AddListingPageState extends ConsumerState<AddListingPage> {
   String _selectedCondition = 'good';
   final List<XFile> _images = [];
   bool _isLoading = false;
+  DateTime _focusedDay = DateTime.now();
+
+final Set<DateTime> _unavailableDates = {};
 
   bool get isEdit => widget.listingId != null;
+  @override
+void initState() {
+  super.initState();
+
+  if (isEdit) {
+    _loadListing();
+  }
+}
 
   @override
   void dispose() {
@@ -53,7 +68,36 @@ class _AddListingPageState extends ConsumerState<AddListingPage> {
     super.dispose();
   }
 
-  Future<void> _pickImages() async {
+  Future<void> _loadListing() async {
+  final doc = await FirebaseFirestore.instance
+      .collection('listings')
+      .doc(widget.listingId)
+      .get();
+
+  if (!doc.exists) return;
+
+  final data = doc.data()!;
+
+  setState(() {
+    _titleCtrl.text = data['title'] ?? '';
+    _descCtrl.text = data['description'] ?? '';
+
+    _priceCtrl.text =
+        (data['pricePerDay'] ?? 0).toString();
+
+    _depositCtrl.text =
+        (data['deposit'] ?? 0).toString();
+
+    _penaltyCtrl.text =
+        (data['penaltyPerDay'] ?? 0).toString();
+
+    _selectedCategoryId =
+        data['categoryId'];
+
+    _selectedCondition =
+        data['condition'] ?? 'good';
+  });
+} _pickImages() async {
     final picker = ImagePicker();
     final files = await picker.pickMultiImage(imageQuality: 80);
     if (files.isNotEmpty) {
@@ -62,29 +106,117 @@ class _AddListingPageState extends ConsumerState<AddListingPage> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih kategori barang'), backgroundColor: AppColors.error),
-      );
-      return;
-    }
+  if (!_formKey.currentState!.validate()) return;
 
+  if (_selectedCategoryId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Pilih kategori barang'),
+      ),
+    );
+    return;
+  }
+
+  try {
     setState(() => _isLoading = true);
-    // TODO: Call API to create/update listing
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
+
+    List<String> photoUrls = [];
+
+print("JUMLAH FOTO = ${_images.length}");
+
+for (final image in _images) {
+
+  print("FILE DIPILIH = ${image.path}");
+
+  final url =
+      await CloudinaryService.uploadImage(
+    File(image.path),
+  );
+
+  print("URL HASIL CLOUDINARY = $url");
+
+  if (url != null) {
+    photoUrls.add(url);
+  }
+}
+
+print("SEMUA URL = $photoUrls");
+    
+
+for (final image in _images) {
+  print(image.path);
+}
+
+    final listingData = {
+  'title': _titleCtrl.text.trim(),
+  'description': _descCtrl.text.trim(),
+  'categoryId': _selectedCategoryId,
+  'condition': _selectedCondition,
+  'photos': photoUrls,
+  'pricePerDay':
+      int.tryParse(
+            _priceCtrl.text
+                .replaceAll('.', ''),
+          ) ??
+          0,
+  'deposit':
+      int.tryParse(
+            _depositCtrl.text
+                .replaceAll('.', ''),
+          ) ??
+          0,
+  'penaltyPerDay':
+      int.tryParse(
+            _penaltyCtrl.text
+                .replaceAll('.', ''),
+          ) ??
+          0,
+  'status': 'aktif',
+  'unavailableDates':
+      _unavailableDates
+          .map((d) => d.toIso8601String())
+          .toList(),
+};
+
+if (isEdit) {
+  await FirebaseFirestore.instance
+      .collection('listings')
+      .doc(widget.listingId)
+      .update(listingData);
+} else {
+  await FirebaseFirestore.instance
+      .collection('listings')
+      .add({
+    ...listingData,
+    'createdAt':
+        FieldValue.serverTimestamp(),
+  });
+}
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEdit ? 'Barang berhasil diperbarui!' : 'Barang berhasil ditambahkan!'),
-          backgroundColor: AppColors.success,
+        const SnackBar(
+          content: Text(
+            'Barang berhasil ditambahkan!',
+          ),
+          backgroundColor: Colors.green,
         ),
       );
+
       context.pop();
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(e.toString()),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +279,12 @@ class _AddListingPageState extends ConsumerState<AddListingPage> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: const Icon(Icons.image_outlined, size: 40, color: AppColors.textSecondary),
+                            child: Image.file(
+                            File(e.value.path),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
                           ),
                         ),
                         Positioned(
@@ -189,7 +326,7 @@ class _AddListingPageState extends ConsumerState<AddListingPage> {
               // Category
               const _SectionLabel('Kategori'),
               DropdownButtonFormField<int>(
-                value: _selectedCategoryId,
+                initialValue: _selectedCategoryId,
                 hint: const Text('Pilih kategori'),
                 decoration: const InputDecoration(),
                 items: _categoryOptions.map((c) => DropdownMenuItem<int>(
@@ -273,8 +410,66 @@ class _AddListingPageState extends ConsumerState<AddListingPage> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(prefixText: 'Rp ', hintText: '50.000'),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
+const _SectionLabel('Ketersediaan Barang'),
+
+Container(
+  padding: const EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: Colors.grey.shade300),
+  ),
+  child: TableCalendar(
+    firstDay: DateTime.utc(2025, 1, 1),
+    lastDay: DateTime.utc(2030, 12, 31),
+    focusedDay: _focusedDay,
+
+    selectedDayPredicate: (day) {
+      return _unavailableDates.any(
+        (d) =>
+            d.year == day.year &&
+            d.month == day.month &&
+            d.day == day.day,
+      );
+    },
+
+    onDaySelected: (selectedDay, focusedDay) {
+      setState(() {
+
+        final exists = _unavailableDates.any(
+          (d) =>
+              d.year == selectedDay.year &&
+              d.month == selectedDay.month &&
+              d.day == selectedDay.day,
+        );
+
+        if (exists) {
+          _unavailableDates.removeWhere(
+            (d) =>
+                d.year == selectedDay.year &&
+                d.month == selectedDay.month &&
+                d.day == selectedDay.day,
+          );
+        } else {
+          _unavailableDates.add(selectedDay);
+        }
+
+        _focusedDay = focusedDay;
+      });
+    },
+
+    calendarStyle: const CalendarStyle(
+      selectedDecoration: BoxDecoration(
+        color: Colors.red,
+        shape: BoxShape.circle,
+      ),
+    ),
+  ),
+),
+
+const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _submit,
                 child: _isLoading
