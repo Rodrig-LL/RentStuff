@@ -114,20 +114,20 @@ lib/
 **--Borrower--**
 
 <p align="center">
-<img src="screenshots/Borrower/Home Page_Borrower.png" width="220" />
-<img src="screenshots/Borrower/History Page_Borrower.png" width="220" />
-<img src="screenshots/Borrower/Chat Page_Borrower.png" width="220" />
-  
-</p>
-<p align="center">
-<img src="screenshots/Borrower/Profile Page_Borrower.png" width="220" />
-<img src="screenshots/Borrower/Home Dark_Borrower.png" width="220" />
-<img src="screenshots/Borrower/Profile Dark_Borrower.png" width="220" />
+  <img src="Screenshots/Borrower/Home%20Page_Borrower.png" width="220" />
+  <img src="Screenshots/Borrower/History%20Page_Borrower.png" width="220" />
+  <img src="Screenshots/Borrower/Chat%20Page_Borrower.png" width="220" />
 </p>
 
 <p align="center">
-<img src="screenshots/Borrower/Product_Borrower.png" width="220" />
-<img src="screenshots/Borrower/Product Dark_Borrower.png" width="220" />
+  <img src="Screenshots/Borrower/Profile%20Page_Borrower.png" width="220" />
+  <img src="Screenshots/Borrower/Home%20Dark_Borrower.png" width="220" />
+  <img src="Screenshots/Borrower/Profile%20Dark_Borrower.png" width="220" />
+</p>
+
+<p align="center">
+  <img src="Screenshots/Borrower/Product_Borrower.png" width="220" />
+  <img src="Screenshots/Borrower/Product%20Dark_Borrower.png" width="220" />
 </p>
 
 ---
