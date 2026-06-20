@@ -108,30 +108,30 @@ class _DashboardTab extends ConsumerWidget {
                         icon: Icons.account_balance_wallet_outlined,
                         color: const Color(0xFF10B981))),
                 const SizedBox(width: 12),
-                Expanded(
+                const Expanded(
                     child: _StatCard(
                         label: 'Total Penyewaan',
                         value: '14x',
                         icon: Icons.handshake_outlined,
-                        color: const Color(0xFF376BE0))),
+                        color: Color(0xFF376BE0))),
               ],
             ),
             const SizedBox(height: 12),
-            Row(
+            const Row(
               children: [
                 Expanded(
                     child: _StatCard(
                         label: 'Barang Aktif',
                         value: '3',
                         icon: Icons.inventory_2_outlined,
-                        color: const Color(0xFFF59E0B))),
-                const SizedBox(width: 12),
+                        color: Color(0xFFF59E0B))),
+                SizedBox(width: 12),
                 Expanded(
                     child: _StatCard(
                         label: 'Permintaan Baru',
                         value: '2',
                         icon: Icons.mark_email_unread_outlined,
-                        color: const Color(0xFFF97316))),
+                        color: Color(0xFFF97316))),
               ],
             ),
             const SizedBox(height: 28),

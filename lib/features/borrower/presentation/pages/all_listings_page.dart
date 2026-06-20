@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/pages/all_listings_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +5,7 @@ import '../providers/listing_provider.dart';
 
 class AllListingsPage extends ConsumerWidget {
   final String title;
-  // Letakkan constructor tanpa keharusan const jika parameter dinamis
+
   const AllListingsPage({super.key, required this.title});
 
   @override

@@ -51,8 +51,6 @@ class HelpCenterPage extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: Colors.black87)),
             const SizedBox(height: 12),
-
-            // Menggunakan Column Mapping yang jauh lebih stabil untuk Flutter Web
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
@@ -65,7 +63,6 @@ class HelpCenterPage extends StatelessWidget {
                   var faq = entry.value;
                   return Column(
                     children: [
-                      // BUNGKUS DENGAN THEME TRANSPARAN
                       Theme(
                         data: Theme.of(context).copyWith(
                           hoverColor: Colors.transparent,
@@ -73,7 +70,7 @@ class HelpCenterPage extends StatelessWidget {
                           highlightColor: Colors.transparent,
                         ),
                         child: ExpansionTile(
-                          key: ValueKey(index), // Tambahkan Key
+                          key: ValueKey(index),
                           title: Text(faq['q']!,
                               style: const TextStyle(
                                   fontSize: 13,
@@ -91,7 +88,6 @@ class HelpCenterPage extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // Memunculkan garis pemisah kecuali di item paling akhir
                       if (index < faqs.length - 1)
                         const Divider(height: 1, color: Colors.black12),
                     ],
@@ -100,8 +96,6 @@ class HelpCenterPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-
-            // Hubungi CS
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

@@ -48,7 +48,7 @@ class _LenderBookingsPageState extends ConsumerState<LenderBookingsPage>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
+        children: const [
           _BookingList(status: 'pending'),
           _BookingList(status: 'approved'),
           _BookingList(status: 'ongoing'),
@@ -69,24 +69,33 @@ class _BookingList extends StatelessWidget {
     final mockBookings = [
       if (status == 'pending') ...[
         _MockBooking(
-          id: 1, borrowerName: 'Andi Permana', itemName: 'Sony A7III',
+          id: 1,
+          borrowerName: 'Andi Permana',
+          itemName: 'Sony A7III',
           startDate: DateTime.now().add(const Duration(days: 2)),
           endDate: DateTime.now().add(const Duration(days: 4)),
-          totalPrice: 750000, status: 'pending',
+          totalPrice: 750000,
+          status: 'pending',
         ),
         _MockBooking(
-          id: 2, borrowerName: 'Sari Kusuma', itemName: 'DJI Mini 3 Pro',
+          id: 2,
+          borrowerName: 'Sari Kusuma',
+          itemName: 'DJI Mini 3 Pro',
           startDate: DateTime.now().add(const Duration(days: 5)),
           endDate: DateTime.now().add(const Duration(days: 7)),
-          totalPrice: 900000, status: 'pending',
+          totalPrice: 900000,
+          status: 'pending',
         ),
       ],
       if (status == 'approved') ...[
         _MockBooking(
-          id: 3, borrowerName: 'Dika Pratama', itemName: 'Tenda Camping',
+          id: 3,
+          borrowerName: 'Dika Pratama',
+          itemName: 'Tenda Camping',
           startDate: DateTime.now().add(const Duration(days: 1)),
           endDate: DateTime.now().add(const Duration(days: 3)),
-          totalPrice: 225000, status: 'approved',
+          totalPrice: 225000,
+          status: 'approved',
         ),
       ],
     ];
@@ -96,9 +105,11 @@ class _BookingList extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.inbox_outlined, size: 64, color: AppColors.textHint),
+            const Icon(Icons.inbox_outlined,
+                size: 64, color: AppColors.textHint),
             const SizedBox(height: 12),
-            Text('Tidak ada pesanan $status', style: const TextStyle(color: AppColors.textSecondary)),
+            Text('Tidak ada pesanan $status',
+                style: const TextStyle(color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -123,9 +134,13 @@ class _MockBooking {
   final String status;
 
   _MockBooking({
-    required this.id, required this.borrowerName, required this.itemName,
-    required this.startDate, required this.endDate,
-    required this.totalPrice, required this.status,
+    required this.id,
+    required this.borrowerName,
+    required this.itemName,
+    required this.startDate,
+    required this.endDate,
+    required this.totalPrice,
+    required this.status,
   });
 }
 
@@ -156,7 +171,8 @@ class _LenderBookingCardState extends State<_LenderBookingCard> {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final fmt =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
     final dateFmt = DateFormat('dd MMM', 'id_ID');
     final b = widget.booking;
 
@@ -175,15 +191,20 @@ class _LenderBookingCardState extends State<_LenderBookingCard> {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.primaryLight,
-                child: Text(b.borrowerName[0], style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                child: Text(b.borrowerName[0],
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, color: AppColors.primary)),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(b.borrowerName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text('Ingin menyewa: ${b.itemName}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    Text(b.borrowerName,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text('Ingin menyewa: ${b.itemName}',
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.textSecondary)),
                   ],
                 ),
               ),
@@ -198,7 +219,9 @@ class _LenderBookingCardState extends State<_LenderBookingCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Tanggal Sewa', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                  const Text('Tanggal Sewa',
+                      style: TextStyle(
+                          fontSize: 11, color: AppColors.textSecondary)),
                   Text(
                     '${dateFmt.format(b.startDate)} – ${dateFmt.format(b.endDate)}',
                     style: const TextStyle(fontWeight: FontWeight.w600),
@@ -208,8 +231,13 @@ class _LenderBookingCardState extends State<_LenderBookingCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('Total', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                  Text(fmt.format(b.totalPrice), style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                  const Text('Total',
+                      style: TextStyle(
+                          fontSize: 11, color: AppColors.textSecondary)),
+                  Text(fmt.format(b.totalPrice),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary)),
                 ],
               ),
             ],
@@ -220,7 +248,8 @@ class _LenderBookingCardState extends State<_LenderBookingCard> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _isProcessing ? null : () => _handleAction(false),
+                    onPressed:
+                        _isProcessing ? null : () => _handleAction(false),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
                       side: const BorderSide(color: AppColors.error),
@@ -233,9 +262,14 @@ class _LenderBookingCardState extends State<_LenderBookingCard> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _isProcessing ? null : () => _handleAction(true),
-                    style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
+                    style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 44)),
                     child: _isProcessing
-                        ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
                         : const Text('Setujui'),
                   ),
                 ),

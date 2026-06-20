@@ -1,9 +1,7 @@
-// lib/features/borrower/presentation/pages/add_review_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class AddReviewPage extends StatefulWidget {
-  // 1. UBAH VARIABEL: Kita passing data 'booking' utuh agar bisa update Firebase
   final dynamic booking;
 
   const AddReviewPage({super.key, required this.booking});
@@ -23,7 +21,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
     super.dispose();
   }
 
-  // 2. FUNGSI FIREBASE: Mengirim ulasan ke database
   Future<void> _submitReview() async {
     setState(() => _isLoading = true);
 
@@ -40,7 +37,7 @@ class _AddReviewPageState extends State<AddReviewPage> {
       });
 
       if (mounted) {
-        Navigator.pop(context); // Kembali ke Riwayat
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Terima kasih! Ulasan Anda berhasil dikirim.'),
@@ -63,7 +60,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 3. TEMA GELAP: Mengubah background statis menjadi dinamis
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
@@ -85,7 +81,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Card Info Barang
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -116,8 +111,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
               ),
             ),
             const SizedBox(height: 32),
-
-            // Rating Bintang Interaktif
             const Text('Bagaimana kualitas barang ini?',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
@@ -143,8 +136,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
               }),
             ),
             const SizedBox(height: 24),
-
-            // Kolom Ulasan
             const Align(
               alignment: Alignment.centerLeft,
               child: Text('Tulis Ulasan Anda (Opsional)',
@@ -173,8 +164,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
               ),
             ),
             const SizedBox(height: 40),
-
-            // Tombol Kirim
             SizedBox(
               width: double.infinity,
               height: 48,

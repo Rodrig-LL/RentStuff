@@ -1,10 +1,9 @@
-// lib/features/chat/presentation/pages/chat_list_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// 1. Model Data untuk Daftar Chat
 class ChatRoomModel {
   final String id;
   final String otherName;
@@ -21,20 +20,28 @@ class ChatRoomModel {
   });
 }
 
-// 2. Provider untuk menyedot daftar room dari Firebase
 final chatRoomsProvider =
     StreamProvider.autoDispose<List<ChatRoomModel>>((ref) {
+  final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
   return FirebaseFirestore.instance
       .collection('chat_rooms')
-      .orderBy('last_message_at', descending: true) // Urutkan dari chat terbaru
+      .orderBy('last_message_at', descending: true)
       .snapshots()
       .map((snapshot) {
     return snapshot.docs.map((doc) {
       final data = doc.data();
+
+      String opponentName = 'Pengguna';
+      if (data['borrower_id'] == currentUserId) {
+        opponentName = data['lender_name'] ?? 'Pemilik Barang';
+      } else {
+        opponentName = data['borrower_name'] ?? 'Penyewa';
+      }
+
       return ChatRoomModel(
         id: doc.id,
-        // Jika belum ada nama spesifik, gunakan default
-        otherName: data['other_name'] ?? 'Pengguna',
+        otherName: opponentName,
         lastMessage: data['last_message'] ?? 'Mulai percakapan...',
         lastMessageAt:
             (data['last_message_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -49,7 +56,6 @@ class ChatListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Pantau data chat dari Firebase
     final chatRoomsAsync = ref.watch(chatRoomsProvider);
 
     return Scaffold(
@@ -96,7 +102,6 @@ class ChatListPage extends ConsumerWidget {
               return _ChatTile(
                 chat: room,
                 onTap: () {
-                  // FIX NAVIGATION: Gunakan PUSH agar Bottom Navigation Bar tidak hilang saat kembali
                   context.push('/chats/${room.id}');
                 },
               );
@@ -108,7 +113,6 @@ class ChatListPage extends ConsumerWidget {
   }
 }
 
-// 3. Desain UI Tiap Baris Chat
 class _ChatTile extends StatelessWidget {
   final ChatRoomModel chat;
   final VoidCallback onTap;
@@ -117,7 +121,6 @@ class _ChatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Format waktu (Contoh: 10:30)
     final timeString =
         '${chat.lastMessageAt.hour.toString().padLeft(2, '0')}:${chat.lastMessageAt.minute.toString().padLeft(2, '0')}';
 

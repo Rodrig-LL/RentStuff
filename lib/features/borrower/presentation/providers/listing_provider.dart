@@ -1,43 +1,7 @@
-// lib/features/borrower/presentation/providers/listing_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/listing_entity.dart';
 
-class BookingEntity {
-  final String id;
-  final int borrowerId;
-  final String listingId;
-  final DateTime startDate;
-  final DateTime endDate;
-  final int totalDays;
-  final double totalPrice;
-  String status;
-  final String? listingTitle;
-  final String? lenderName;
-  final String? borrowerName;
-  final String? borrowerAddress;
-  final String? paymentMethod;
-  final String? notes;
-
-  BookingEntity({
-    required this.id,
-    required this.borrowerId,
-    required this.listingId,
-    required this.startDate,
-    required this.endDate,
-    required this.totalDays,
-    required this.totalPrice,
-    required this.status,
-    this.listingTitle,
-    this.lenderName,
-    this.borrowerName,
-    this.borrowerAddress,
-    this.paymentMethod,
-    this.notes,
-  });
-}
-
-// Filter State
 class ListingFilter {
   final String? query;
   final int? categoryId;
@@ -120,34 +84,42 @@ class ListingFilterNotifier extends StateNotifier<ListingFilter> {
   }
 }
 
-// Listings provider - fetches listings based on current filter
 final listingsProvider = StreamProvider.autoDispose<List<ListingEntity>>((ref) {
-  // Memanggil koleksi 'listings' dari Firebase
   final collection = FirebaseFirestore.instance.collection('listings');
 
-  // Mengubah aliran data Firebase menjadi List<ListingEntity> untuk aplikasi kita
   return collection.snapshots().map((snapshot) {
     return snapshot.docs.map((doc) {
       final data = doc.data();
 
+      List<String> safePhotos = [];
+      if (data['photos'] is List) {
+        safePhotos = List<String>.from(data['photos']);
+      } else if (data['photos'] is String &&
+          data['photos'].toString().isNotEmpty) {
+        safePhotos = [data['photos'].toString()];
+      }
+
       return ListingEntity(
         id: doc.id,
-        lenderId: data['lenderId'] ?? 0,
-        categoryId: data['categoryId'] ?? 6,
-        title: data['title'] ?? 'Barang Tanpa Nama',
-        description: data['description'] ?? 'Tidak ada deskripsi',
-        pricePerDay: (data['pricePerDay'] ?? 0).toDouble(),
-        deposit: (data['deposit'] ?? 0).toDouble(),
-        condition: data['condition'] ?? 'good',
-        status: (data['status'] ?? 'unavailable').toString().toLowerCase(),
-        lenderName: data['lenderName'] ?? 'Anonim',
-        lenderAvatar: data['lenderAvatar'],
-        lenderRating: (data['lenderRating'] ?? 0.0).toDouble(),
-        categoryName: data['categoryName'],
-        photos: List<String>.from(data['photos'] ?? []),
-        averageRating: (data['averageRating'] ?? 0.0).toDouble(),
-        reviewCount: data['reviewCount'] ?? 0,
-        location: data['location'],
+        lenderId: int.tryParse(data['lenderId']?.toString() ?? '0') ?? 0,
+        categoryId: int.tryParse(data['categoryId']?.toString() ?? '6') ?? 6,
+        title: data['title']?.toString() ?? 'Barang Tanpa Nama',
+        description: data['description']?.toString() ?? 'Tidak ada deskripsi',
+        pricePerDay:
+            double.tryParse(data['pricePerDay']?.toString() ?? '0') ?? 0.0,
+        deposit: double.tryParse(data['deposit']?.toString() ?? '0') ?? 0.0,
+        condition: data['condition']?.toString() ?? 'good',
+        status: (data['status']?.toString() ?? 'unavailable').toLowerCase(),
+        lenderName: data['lenderName']?.toString() ?? 'Anonim',
+        lenderAvatar: data['lenderAvatar']?.toString(),
+        lenderRating:
+            double.tryParse(data['lenderRating']?.toString() ?? '0') ?? 0.0,
+        categoryName: data['categoryName']?.toString(),
+        photos: safePhotos,
+        averageRating:
+            double.tryParse(data['averageRating']?.toString() ?? '0') ?? 0.0,
+        reviewCount: int.tryParse(data['reviewCount']?.toString() ?? '0') ?? 0,
+        location: data['location']?.toString(),
       );
     }).toList();
   });

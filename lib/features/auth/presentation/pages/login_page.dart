@@ -58,8 +58,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 48),
-
-                // Logo & Title
                 Center(
                   child: Column(
                     children: [
@@ -96,9 +94,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 48),
-
                 const Text(
                   'Masuk ke Akun',
                   style: TextStyle(
@@ -113,8 +109,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   style: TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 28),
-
-                // Email
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
@@ -123,16 +117,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Email tidak boleh kosong';
-                    if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
+                    if (v == null || v.isEmpty) {
+                      return 'Email tidak boleh kosong';
+                    }
+                    if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(v)) {
                       return 'Format email tidak valid';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Password
                 TextFormField(
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
@@ -148,14 +143,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Password tidak boleh kosong';
+                    if (v == null || v.isEmpty) {
+                      return 'Password tidak boleh kosong';
+                    }
                     if (v.length < 8) return 'Password minimal 8 karakter';
                     return null;
                   },
                 ),
                 const SizedBox(height: 28),
-
-                // Login Button
                 ElevatedButton(
                   onPressed: authState.isLoading ? null : _handleLogin,
                   child: authState.isLoading
@@ -170,8 +165,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       : const Text('Masuk'),
                 ),
                 const SizedBox(height: 16),
-
-                // Register Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

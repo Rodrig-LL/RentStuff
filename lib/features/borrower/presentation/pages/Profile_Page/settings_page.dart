@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/pages/Profile_Page/settings_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/app_theme.dart';
@@ -11,7 +10,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  // Status notifikasi tetap pakai state lokal
   bool _isNotifEnabled = true;
 
   void _showFeedback(String message) {
@@ -23,12 +21,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Baca status saklar dari Riverpod
     final currentTheme = ref.watch(themeModeProvider);
     final isDarkMode = currentTheme == ThemeMode.dark;
 
     return Scaffold(
-      // 2. Gunakan warna bawaan Theme agar otomatis gelap/terang
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
@@ -61,7 +57,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor, // Mengikuti tema
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.withOpacity(0.2)),
             ),
@@ -74,7 +70,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   subtitle: const Text('Terima pembaruan berkala status sewa',
                       style: TextStyle(fontSize: 11)),
                   value: _isNotifEnabled,
-                  activeColor: const Color(0xFF123BCA),
+                  activeThumbColor: const Color(0xFF123BCA),
                   onChanged: (v) {
                     setState(() => _isNotifEnabled = v);
                     _showFeedback(
@@ -87,10 +83,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   title: const Text('Mode Gelap (Dark Mode)',
                       style:
                           TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                  value: isDarkMode, // Terhubung ke saklar
-                  activeColor: const Color(0xFF123BCA),
+                  value: isDarkMode,
+                  activeThumbColor: const Color(0xFF123BCA),
                   onChanged: (bool value) {
-                    // 3. UBAH SAKLAR UTAMA RIVERPOD SAAT DITEKAN
                     ref.read(themeModeProvider.notifier).state =
                         value ? ThemeMode.dark : ThemeMode.light;
                     _showFeedback(value
@@ -144,7 +139,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  // Komponen untuk List Tile agar lebih ringkas
   Widget _buildListTile(String title, String trailingText, VoidCallback onTap) {
     return ListTile(
       title: Text(title,

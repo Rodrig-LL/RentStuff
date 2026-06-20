@@ -36,7 +36,7 @@ class _ReturnItemPageState extends State<ReturnItemPage> {
       });
 
       if (mounted) {
-        Navigator.pop(context); // Tutup form
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Form pengembalian berhasil dikirim ke pemilik!'),
@@ -81,7 +81,6 @@ class _ReturnItemPageState extends State<ReturnItemPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── 1. INFO BARANG ──
             const Text('Barang yang Dikembalikan',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
@@ -91,7 +90,6 @@ class _ReturnItemPageState extends State<ReturnItemPage> {
                     color: Color(0xFF376BE0),
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 24),
-
             const Text('Kirim ke Alamat Pemilik',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
@@ -128,7 +126,6 @@ class _ReturnItemPageState extends State<ReturnItemPage> {
               ),
             ),
             const SizedBox(height: 24),
-
             const Text('Foto Bukti Pengiriman/Kondisi Barang',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
@@ -156,7 +153,6 @@ class _ReturnItemPageState extends State<ReturnItemPage> {
               ),
             ),
             const SizedBox(height: 24),
-
             const Text('Nomor Resi Pengiriman',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
@@ -181,7 +177,6 @@ class _ReturnItemPageState extends State<ReturnItemPage> {
               ),
             ),
             const SizedBox(height: 40),
-
             SizedBox(
               width: double.infinity,
               height: 48,

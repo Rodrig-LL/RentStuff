@@ -1,7 +1,5 @@
-// lib/features/borrower/presentation/pages/checkout_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../providers/booking_provider.dart';
@@ -13,7 +11,6 @@ class CheckoutPage extends ConsumerStatefulWidget {
   final int totalDays;
   final double totalPrice;
 
-  // HAPUS parameter discount dari sini agar tidak error di booking_page
   const CheckoutPage({
     super.key,
     required this.listing,
@@ -66,10 +63,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
     double itemDeposit = widget.listing.deposit?.toDouble() ?? 0.0;
 
-    // Hitung diskon di sini, bukan di atas
     double discount = 0.0;
     if (widget.totalDays >= 7) {
-      discount = widget.totalPrice * 0.10; // Diskon 10%
+      discount = widget.totalPrice * 0.10;
     }
 
     double finalGrandTotal =
@@ -121,12 +117,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     border: OutlineInputBorder()),
               ),
               const SizedBox(height: 24),
-
               const Text('Pilihan Opsi Pengiriman (Ongkir)',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _selectedShipping,
+                initialValue: _selectedShipping,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: _shippingRates.keys.map((String method) {
                   return DropdownMenuItem<String>(
@@ -138,12 +133,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 onChanged: (val) => _updateShipping(val!),
               ),
               const SizedBox(height: 24),
-
               const Text('Metode Pembayaran',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedPayment,
+                initialValue: _selectedPayment,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: [
                   'Transfer Bank BCA',
@@ -155,16 +149,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     .toList(),
                 onChanged: (val) => setState(() => _selectedPayment = val!),
               ),
-
               const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Divider()),
-
               const Text('Detailing Rincian Biaya Keseluruhan',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-
-              // PERBAIKAN CONTAINER ERROR DISINI
               Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
@@ -174,7 +164,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Posisi blok IF yang benar adalah di dalam children Column
                     if (widget.totalDays >= 7) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -192,7 +181,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       ),
                       const SizedBox(height: 12),
                     ],
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -262,7 +250,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 ),
               ),
               const SizedBox(height: 40),
-
               SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -281,6 +268,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                 endDate: widget.endDate,
                                 totalPrice: finalGrandTotal,
                                 durationDays: widget.totalDays,
+                                listingPhoto: widget.listing.photos.isNotEmpty
+                                    ? widget.listing.photos.first
+                                    : '',
                               );
                       if (success) {
                         ScaffoldMessenger.of(context).clearSnackBars();

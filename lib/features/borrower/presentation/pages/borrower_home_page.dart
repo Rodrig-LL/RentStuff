@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/pages/borrower_home_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +7,6 @@ import '../providers/listing_provider.dart';
 import 'borrower_orders_page.dart';
 import 'borrower_chat_page.dart';
 import 'borrower_profile_page.dart';
-import 'all_listings_page.dart';
 
 final homeTabIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -130,7 +128,6 @@ class _HomeTab extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Top App Bar ──
               Container(
                 decoration: BoxDecoration(
                   border: Border(
@@ -170,8 +167,7 @@ class _HomeTab extends ConsumerWidget {
                                       elevation: 6,
                                       shadowColor: Colors.black26,
                                       borderRadius: BorderRadius.circular(12),
-                                      color: Theme.of(context)
-                                          .cardColor, // Mengikuti tema
+                                      color: Theme.of(context).cardColor,
                                       child: SizedBox(
                                         width: 300,
                                         child: Column(
@@ -284,12 +280,10 @@ class _HomeTab extends ConsumerWidget {
                   ],
                 ),
               ),
-
-              // ── Search Input Box ──
               Container(
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    color: Theme.of(context).cardColor, // Mengikuti tema
+                    color: Theme.of(context).cardColor,
                     border: Border.all(color: Colors.grey.withOpacity(0.3))),
                 padding: const EdgeInsets.only(
                     left: 13, right: 8, top: 4, bottom: 4),
@@ -326,7 +320,6 @@ class _HomeTab extends ConsumerWidget {
                   ],
                 ),
               ),
-
               if (!isSearching) ...[
                 const Padding(
                   padding: EdgeInsets.fromLTRB(18, 8, 18, 16),
@@ -465,8 +458,6 @@ class _HomeTab extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 10),
-
-              // ── Grid Hasil Barang ──
               listings.when(
                 loading: () => const Padding(
                     padding: EdgeInsets.all(40),
@@ -480,12 +471,15 @@ class _HomeTab extends ConsumerWidget {
                 data: (items) {
                   final filteredItems = items.where((item) {
                     if (filter.categoryId != null &&
-                        item.categoryId != filter.categoryId) return false;
+                        item.categoryId != filter.categoryId) {
+                      return false;
+                    }
                     if (filter.query != null &&
                         !item.title
                             .toLowerCase()
-                            .contains(filter.query!.toLowerCase()))
+                            .contains(filter.query!.toLowerCase())) {
                       return false;
+                    }
                     return true;
                   }).toList();
 
@@ -536,7 +530,7 @@ extension on AutoDisposeStreamProvider<List<ListingEntity>> {
 
 class AllListingsPage extends StatelessWidget {
   final String title;
-  const AllListingsPage({required this.title});
+  const AllListingsPage({super.key, required this.title});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -561,7 +555,7 @@ class _ListingCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.withOpacity(0.2)),
-          color: Theme.of(context).cardColor, // Mengikuti tema
+          color: Theme.of(context).cardColor,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,13 +564,24 @@ class _ListingCard extends StatelessWidget {
               child: ClipRRect(
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(11)),
-                child: Container(
-                  width: double.infinity,
-                  color: const Color(0xFF376BE0).withOpacity(
-                      0.1), // Transparan agar cantik di mode gelap/terang
-                  child: const Icon(Icons.image_outlined,
-                      size: 36, color: Color(0xFF376BE0)),
-                ),
+                child: listing.photos.isNotEmpty
+                    ? Image.network(
+                        listing.photos.first,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: double.infinity,
+                          color: const Color(0xFF376BE0).withOpacity(0.1),
+                          child: const Icon(Icons.broken_image,
+                              size: 36, color: Color(0xFF376BE0)),
+                        ),
+                      )
+                    : Container(
+                        width: double.infinity,
+                        color: const Color(0xFF376BE0).withOpacity(0.1),
+                        child: const Icon(Icons.image_outlined,
+                            size: 36, color: Color(0xFF376BE0)),
+                      ),
               ),
             ),
             Padding(

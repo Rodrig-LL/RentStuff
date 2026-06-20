@@ -1,4 +1,3 @@
-// lib/features/borrower/domain/entities/listing_entity.dart
 import 'package:equatable/equatable.dart';
 
 class ListingEntity extends Equatable {
@@ -59,7 +58,6 @@ class ListingEntity extends Equatable {
   List<Object?> get props => [id, title, pricePerDay, status];
 }
 
-// lib/features/borrower/domain/entities/booking_entity.dart
 class BookingEntity extends Equatable {
   final int id;
   final int borrowerId;

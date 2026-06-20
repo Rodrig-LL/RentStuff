@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/pages/order_detail_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../providers/booking_provider.dart';
@@ -8,10 +7,8 @@ class OrderDetailPage extends StatelessWidget {
 
   const OrderDetailPage({super.key, required this.booking});
 
-  // Fungsi untuk update status ke Firebase
   Future<void> _kembalikanBarang(BuildContext context) async {
     try {
-      // Menampilkan loading indikator (opsional tapi bagus untuk UX)
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -19,7 +16,6 @@ class OrderDetailPage extends StatelessWidget {
             child: CircularProgressIndicator(color: Color(0xFF376BE0))),
       );
 
-      // Update data di Firebase
       await FirebaseFirestore.instance
           .collection('bookings')
           .doc(booking.id)
@@ -27,10 +23,8 @@ class OrderDetailPage extends StatelessWidget {
         'status': 'Menunggu Konfirmasi Pengembalian',
       });
 
-      // Tutup loading
       Navigator.pop(context);
 
-      // Tampilkan notifikasi sukses
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Permintaan pengembalian terkirim ke pemilik!'),
@@ -38,10 +32,9 @@ class OrderDetailPage extends StatelessWidget {
         ),
       );
 
-      // Kembali ke halaman Riwayat
       Navigator.pop(context);
     } catch (e) {
-      Navigator.pop(context); // Tutup loading jika error
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red),
       );
@@ -50,7 +43,6 @@ class OrderDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mengecek apakah pesanan sedang aktif (bisa dikembalikan)
     final bool bisaDikembalikan = booking.status.toLowerCase() == 'disetujui' ||
         booking.status.toLowerCase() == 'aktif';
 
@@ -71,7 +63,6 @@ class OrderDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. CARD STATUS PESANAN
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -89,7 +80,6 @@ class OrderDetailPage extends StatelessWidget {
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          // Warna dinamis berdasarkan status
                           color: booking.status.toLowerCase() == 'selesai'
                               ? Colors.green
                               : booking.status.toLowerCase() ==
@@ -106,8 +96,6 @@ class OrderDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
-            // 2. CARD INFO BARANG
             const Text('Barang yang Disewa',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
@@ -147,8 +135,6 @@ class OrderDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
-            // 3. CARD RINCIAN PEMBAYARAN
             const Text('Rincian Pembayaran',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
@@ -173,8 +159,6 @@ class OrderDetailPage extends StatelessWidget {
           ],
         ),
       ),
-
-      // ── BOTTOM NAV BAR UNTUK TOMBOL KEMBALIKAN BARANG ──
       bottomNavigationBar: bisaDikembalikan
           ? Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -191,7 +175,6 @@ class OrderDetailPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () {
-                  // Tampilkan dialog konfirmasi sebelum mengeksekusi
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -208,9 +191,8 @@ class OrderDetailPage extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF376BE0)),
                           onPressed: () {
-                            Navigator.pop(context); // Tutup dialog konfirmasi
-                            _kembalikanBarang(
-                                context); // Panggil fungsi Firebase
+                            Navigator.pop(context);
+                            _kembalikanBarang(context);
                           },
                           child: const Text('Ya, Sudah Dikembalikan',
                               style: TextStyle(color: Colors.white)),
@@ -224,7 +206,7 @@ class OrderDetailPage extends StatelessWidget {
                         color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             )
-          : null, // Jika status tidak "Disetujui/Aktif", sembunyikan tombol
+          : null,
     );
   }
 }

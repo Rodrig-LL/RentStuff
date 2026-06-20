@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/widgets/category_chip.dart
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 

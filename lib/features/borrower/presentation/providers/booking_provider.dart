@@ -1,15 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:rentstuff/features/auth/presentation/providers/auth_provider.dart'; // Jika menggunakan Firebase Auth
 
-// 1. Model Entitas Pesanan
 class BookingEntity {
   final String id;
   final String listingTitle;
   final double totalPrice;
-  final String status; // 'Menunggu', 'Diproses', 'Selesai'
+  final String status;
   final int durationDays;
+  final String listingPhoto;
 
   BookingEntity({
     required this.id,
@@ -17,6 +16,7 @@ class BookingEntity {
     required this.totalPrice,
     required this.status,
     required this.durationDays,
+    this.listingPhoto = '',
   });
 }
 
@@ -32,6 +32,7 @@ class BookingNotifier {
     required String lenderId,
     required DateTime startDate,
     required DateTime endDate,
+    required String listingPhoto,
   }) async {
     try {
       final String userId = _auth.currentUser?.uid ?? 'user_demo_123';
@@ -47,6 +48,7 @@ class BookingNotifier {
         'lenderId': lenderId,
         'startDate': startDate,
         'endDate': endDate,
+        'listingPhoto': listingPhoto,
       });
       return true;
     } catch (e) {
@@ -73,52 +75,14 @@ final myBookingsProvider =
 
       return BookingEntity(
         id: doc.id,
-        // Gunakan ?.toString() dan tryParse agar aman dari null dan salah tipe data
         listingTitle: data['listingTitle']?.toString() ?? 'Pesanan Tanpa Nama',
         totalPrice:
             double.tryParse(data['totalPrice']?.toString() ?? '0') ?? 0.0,
         status: data['status']?.toString() ?? 'Menunggu',
         durationDays:
             int.tryParse(data['durationDays']?.toString() ?? '1') ?? 1,
+        listingPhoto: (data['listingPhoto']?.toString() ?? '').trim(),
       );
     }).toList();
-  });
-});
-
-final borrowerStatsProvider =
-    StreamProvider.autoDispose<Map<String, dynamic>>((ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null)
-    return Stream.value({'totalBookings': 0, 'averageRating': 0.0});
-
-  return FirebaseFirestore.instance
-      .collection('bookings')
-      .where('borrowerId', isEqualTo: user.id.toString())
-      .snapshots()
-      .map((snapshot) {
-    final docs = snapshot.docs;
-    if (docs.isEmpty) {
-      return {'totalBookings': 0, 'averageRating': 0.0};
-    }
-
-    int totalBookings = docs.length;
-    double totalRating = 0;
-    int reviewedCount = 0;
-
-    for (var doc in docs) {
-      final data = doc.data();
-      if (data['isReviewed'] == true && data['reviewRating'] != null) {
-        totalRating += (data['reviewRating'] as num).toDouble();
-        reviewedCount++;
-      }
-    }
-
-    // Hitung rata-rata rating ulasan yang diberikan oleh user ini
-    double avgRating = reviewedCount > 0 ? totalRating / reviewedCount : 0.0;
-
-    return {
-      'totalBookings': totalBookings,
-      'averageRating': avgRating,
-    };
   });
 });

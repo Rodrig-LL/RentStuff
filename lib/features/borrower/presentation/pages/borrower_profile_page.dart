@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/pages/borrower_profile_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +7,6 @@ import 'Profile_Page/my_reviews_page.dart';
 import 'Profile_Page/help_center_page.dart';
 import 'Profile_Page/settings_page.dart';
 
-// 1. PROVIDER DIPERBARUI: Mengambil Total Pinjam, Sedang Dipinjam, DAN Rating
 final profileStatsProvider =
     StreamProvider.autoDispose<Map<String, dynamic>>((ref) {
   final user = ref.watch(authStateProvider).value;
@@ -66,7 +64,6 @@ class BorrowerProfilePage extends ConsumerWidget {
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            // HEADER
             Container(
               decoration: BoxDecoration(
                   border: Border(
@@ -81,8 +78,6 @@ class BorrowerProfilePage extends ConsumerWidget {
                           fontWeight: FontWeight.bold))),
             ),
             const SizedBox(height: 20),
-
-            // AVATAR
             Container(
               width: 100,
               height: 100,
@@ -100,8 +95,6 @@ class BorrowerProfilePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-
-            // NAMA & EMAIL
             Text(user?.name ?? 'Pengguna',
                 style:
                     const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
@@ -109,8 +102,6 @@ class BorrowerProfilePage extends ConsumerWidget {
             Text(user?.email ?? 'Belum ada email',
                 style: const TextStyle(color: Colors.grey, fontSize: 13)),
             const SizedBox(height: 16),
-
-            // ── BUNGKUSAN DATA ASLI (RATING & STATS) ──
             statsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, s) => const Center(
@@ -124,7 +115,6 @@ class BorrowerProfilePage extends ConsumerWidget {
 
                 return Column(
                   children: [
-                    // 1. RATING ASLI & TEKS RATING PEMESANAN
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -155,8 +145,6 @@ class BorrowerProfilePage extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 28),
-
-                    // 2. KOTAK TOTAL PINJAM & SEDANG DIPINJAM ASLI
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
@@ -177,11 +165,7 @@ class BorrowerProfilePage extends ConsumerWidget {
                 );
               },
             ),
-            // ── AKHIR DATA ASLI ──
-
             const SizedBox(height: 24),
-
-            // MENU APLIKASI
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -227,8 +211,6 @@ class BorrowerProfilePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // TOMBOL LOGOUT
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
@@ -256,7 +238,6 @@ class BorrowerProfilePage extends ConsumerWidget {
   }
 }
 
-// WIDGET CARD STATS
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;
@@ -285,7 +266,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// WIDGET MENU ITEM
 class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;

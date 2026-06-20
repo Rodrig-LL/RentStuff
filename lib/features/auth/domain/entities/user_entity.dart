@@ -2,7 +2,7 @@
 import 'package:equatable/equatable.dart';
 
 class UserEntity extends Equatable {
-  final int id;
+  final String id;
   final String name;
   final String email;
   final String role; // 'borrower' | 'lender' | 'admin'

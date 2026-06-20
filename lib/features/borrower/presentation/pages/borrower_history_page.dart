@@ -1,53 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../providers/booking_provider.dart';
 
-// Model data tiruan (Mock Model) sesuai skema database proposal RentStuff
-class BookingItem {
-  final String id;
-  final String title;
-  final String condition;
-  final int totalDays;
-  final int totalPrice;
-  final String status; // 'Menunggu' atau 'Selesai'
+final listingPhotoProvider =
+    FutureProvider.family<String, String>((ref, listingId) async {
+  if (listingId.isEmpty) return '';
 
-  BookingItem({
-    required this.id,
-    required this.title,
-    required this.condition,
-    required this.totalDays,
-    required this.totalPrice,
-    required this.status,
-  });
-}
+  final doc = await FirebaseFirestore.instance
+      .collection('listings')
+      .doc(listingId)
+      .get();
 
-// Halaman utama Riwayat menggunakan ConsumerWidget (Riverpod)
+  if (!doc.exists) return '';
+
+  final data = doc.data();
+  final photos = data?['photos'];
+
+  if (photos is List && photos.isNotEmpty) {
+    return photos[0].toString();
+  }
+  return '';
+});
+
 class BorrowerHistoryPage extends ConsumerWidget {
   const BorrowerHistoryPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Data dummy berdasarkan gambar UI kamu
-    final List<BookingItem> historyOrders = [
-      BookingItem(
-        id: '1',
-        title: 'Sony A7III + Lensa 24-70mm',
-        condition: 'Sangat Baik',
-        totalDays: 3,
-        totalPrice: 750000,
-        status: 'Menunggu',
-      ),
-      BookingItem(
-        id: '2',
-        title: 'Kamera Canon G7X',
-        condition: 'Sangat Baik',
-        totalDays: 3,
-        totalPrice: 225000,
-        status: 'Selesai',
-      ),
-    ];
-
-    // Warna utama aplikasi (RentStuff Blue)
     const primaryBlue = Color(0xFF1D4ED8);
+    final bookingsAsync = ref.watch(myBookingsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -70,58 +53,49 @@ class BorrowerHistoryPage extends ConsumerWidget {
         ),
         centerTitle: true,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: historyOrders.length,
-        itemBuilder: (context, index) {
-          final order = historyOrders[index];
-          return _buildOrderCard(context, order, primaryBlue);
-        },
-      ),
-      // Bottom Navigation Bar sesuai dengan screenshot UI
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1, // Menu Riwayat aktif
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
-        backgroundColor: primaryBlue,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
+      body: bookingsAsync.when(
+        loading: () => const Center(
+            child: CircularProgressIndicator(color: Color(0xFF1D4ED8))),
+        error: (err, _) => Center(child: Text('Terjadi kesalahan: $err')),
+        data: (historyOrders) {
+          if (historyOrders.isEmpty) {
+            return const Center(
+              child: Text(
+                'Belum ada riwayat pesanan.',
+                style: TextStyle(color: Colors.grey),
               ),
-              child: const Icon(Icons.assignment),
-            ),
-            label: 'Riwayat',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outlined),
-            label: 'Pesan',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: historyOrders.length,
+            itemBuilder: (context, index) {
+              final order = historyOrders[index];
+              return _OrderCard(order: order);
+            },
+          );
+        },
       ),
     );
   }
+}
 
-  // Widget pembangun kartu pesanan (Order Card)
-  Widget _buildOrderCard(BuildContext context, BookingItem order, Color primaryColor) {
-    // Pengaturan warna badge status dinamis sesuai proposal
-    Color badgeBgColor = const Color(0xFFFEF3C7); // Default Menunggu (Kuning/Orange)
+class _OrderCard extends ConsumerWidget {
+  final BookingEntity order;
+  static const primaryBlue = Color(0xFF1D4ED8);
+
+  const _OrderCard({required this.order});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final photoAsync = ref.watch(listingPhotoProvider(order.listingId));
+
+    Color badgeBgColor = const Color(0xFFFEF3C7);
     Color badgeTextColor = const Color(0xFFD97706);
 
     if (order.status == 'Selesai') {
-      badgeBgColor = const Color(0xFFDEF7EC); // Selesai (Hijau)
+      badgeBgColor = const Color(0xFFDEF7EC);
       badgeTextColor = const Color(0xFF03543F);
     }
 
@@ -135,70 +109,67 @@ class BorrowerHistoryPage extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // 1. Placeholder Gambar Barang (Garis Biru Tipis)
-          Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.image_outlined,
-              size: 48,
-              color: Color(0xFF3B82F6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: photoAsync.when(
+              loading: () => _buildLoadingPlaceholder(),
+              error: (_, __) => _buildPlaceholder(),
+              data: (photoUrl) {
+                if (photoUrl.isEmpty) return _buildPlaceholder();
+
+                return CachedNetworkImage(
+                  imageUrl: photoUrl,
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => _buildLoadingPlaceholder(),
+                  errorWidget: (_, __, ___) => _buildPlaceholder(),
+                );
+              },
             ),
           ),
           const SizedBox(height: 12),
-
-          // 2. Baris Informasi & Tombol Utama
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Sisi Kiri: Detail Informasi Barang
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      order.title,
-                      style: TextStyle(
+                      order.listingTitle,
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: primaryColor,
+                        color: primaryBlue,
                         decoration: TextDecoration.underline,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Kondisi: ${order.condition}',
-                      style: const TextStyle(color: Color(0xFF4B5563), fontSize: 13),
-                    ),
-                    Text(
-                      '${order.totalDays} hari sewa',
-                      style: const TextStyle(color: Color(0xFF4B5563), fontSize: 13),
+                      '${order.durationDays} hari sewa',
+                      style: const TextStyle(
+                          color: Color(0xFF4B5563), fontSize: 13),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Rp ${order.totalPrice}',
-                      style: TextStyle(
+                      'Rp ${order.totalPrice.toStringAsFixed(0)}',
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: primaryColor,
+                        color: primaryBlue,
                         decoration: TextDecoration.underline,
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // Sisi Kanan: Badge Status & Tombol Cek Item
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Badge Status (Menunggu / Selesai)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       color: badgeBgColor,
                       borderRadius: BorderRadius.circular(20),
@@ -213,13 +184,11 @@ class BorrowerHistoryPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
-                  // Tombol Cek Item
                   SizedBox(
                     height: 36,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
+                        backgroundColor: primaryBlue,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -227,13 +196,14 @@ class BorrowerHistoryPage extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         elevation: 0,
                       ),
-                      onPressed: () {
-                        // Aksi navigasi detail deskripsi barang & pesanan
-                        // context.push('/order-detail/${order.id}');
-                      },
+                      onPressed: () {},
                       child: const Text(
                         'Cek Item',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
                   ),
@@ -241,8 +211,6 @@ class BorrowerHistoryPage extends ConsumerWidget {
               ),
             ],
           ),
-
-          // 3. Tombol Khusus "Beri Ulasan" jika status sudah Selesai (Fase 4 Finalisasi)
           if (order.status == 'Selesai') ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -250,15 +218,13 @@ class BorrowerHistoryPage extends ConsumerWidget {
               height: 40,
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: primaryColor,
-                  side: BorderSide(color: primaryColor, width: 1.5),
+                  foregroundColor: primaryBlue,
+                  side: const BorderSide(color: primaryBlue, width: 1.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
-                  // Navigasi ke Form Ulasan
-                },
+                onPressed: () {},
                 icon: const Icon(Icons.star_border, size: 18),
                 label: const Text(
                   'Beri Ulasan',
@@ -268,6 +234,33 @@ class BorrowerHistoryPage extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingPlaceholder() {
+    return Container(
+      height: 150,
+      width: double.infinity,
+      color: const Color(0xFFEFF6FF),
+      child: const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF3B82F6),
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      height: 150,
+      width: double.infinity,
+      color: const Color(0xFFEFF6FF),
+      child: const Icon(
+        Icons.image_outlined,
+        size: 48,
+        color: Color(0xFF3B82F6),
       ),
     );
   }

@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/pages/listing_detail_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +6,8 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../providers/listing_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ListingDetailPage extends ConsumerWidget {
   final String listingId;
@@ -46,7 +47,6 @@ class ListingDetailPage extends ConsumerWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          // ── Photo Header ──
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
@@ -83,21 +83,18 @@ class ListingDetailPage extends ConsumerWidget {
                       fit: BoxFit.cover,
                     )
                   : Container(
-                      // TRANPARANSI UNTUK GAMBAR PLACEHOLDER AGAR ELEGAN DI DARK MODE
                       color: const Color(0xFF376BE0).withOpacity(0.1),
                       child: const Icon(Icons.image_outlined,
                           size: 64, color: Color(0xFF376BE0)),
                     ),
             ),
           ),
-
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Category + Status ──
                   Row(
                     children: [
                       if (listing.categoryName != null)
@@ -140,16 +137,12 @@ class ListingDetailPage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Teks Judul Utama (Warna Kaku Dihapus)
                   Text(
                     listing.title,
                     style: const TextStyle(
                         fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
-
-                  // ── Rating & Location ──
                   Row(
                     children: [
                       if (listing.averageRating != null) ...[
@@ -180,8 +173,6 @@ class ListingDetailPage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-
-                  // ── Price & Deposit ──
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -225,8 +216,6 @@ class ListingDetailPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // ── Condition ──
                   Row(
                     children: [
                       const Text('Kondisi: ',
@@ -249,8 +238,6 @@ class ListingDetailPage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-
-                  // ── Description ──
                   const Text('Deskripsi',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
@@ -258,8 +245,6 @@ class ListingDetailPage extends ConsumerWidget {
                   Text(listing.description,
                       style: const TextStyle(color: Colors.grey, height: 1.6)),
                   const SizedBox(height: 20),
-
-                  // ── Lender Info ──
                   Divider(color: Colors.grey.withOpacity(0.2)),
                   const SizedBox(height: 16),
                   const Text('Tentang Pemilik',
@@ -312,8 +297,38 @@ class ListingDetailPage extends ConsumerWidget {
                         ),
                       ),
                       OutlinedButton.icon(
-                        onPressed: () => context
-                            .push('/chats/new?lenderId=${listing.lenderId}'),
+                        onPressed: () async {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Menyiapkan obrolan...'),
+                                duration: Duration(seconds: 1)),
+                          );
+
+                          final currentUser = FirebaseAuth.instance.currentUser;
+                          final borrowerId =
+                              currentUser?.uid ?? 'user_demo_123';
+
+                          final borrowerName =
+                              currentUser?.displayName ?? 'Pengguna';
+
+                          final newRoom = await FirebaseFirestore.instance
+                              .collection('chat_rooms')
+                              .add({
+                            'borrower_id': borrowerId,
+                            'borrower_name': borrowerName,
+                            'lender_id': listing.lenderId.toString(),
+                            'lender_name': listing.lenderName ?? 'Pemilik',
+                            'listing_id': listing.id,
+                            'last_message':
+                                'Halo, saya tertarik dengan ${listing.title}',
+                            'last_message_at': Timestamp.now(),
+                            'unread': 0,
+                          });
+
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                          context.push('/chats/${newRoom.id}');
+                        },
                         icon: const Icon(Icons.chat_bubble_outline_rounded,
                             size: 16),
                         label: const Text('Chat'),
@@ -329,8 +344,6 @@ class ListingDetailPage extends ConsumerWidget {
           ),
         ],
       ),
-
-      // ── Bottom Action ──
       bottomNavigationBar: listing.isAvailable
           ? Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -346,7 +359,6 @@ class ListingDetailPage extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () => context.go('/borrower/booking/$listingId'),
-                // TEKS TOMBOL DIBERI WARNA PUTIH AGAR TERBACA
                 child: const Text('Pesan Sekarang',
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)),

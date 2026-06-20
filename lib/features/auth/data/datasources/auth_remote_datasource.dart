@@ -1,13 +1,10 @@
 // lib/features/auth/data/datasources/auth_remote_datasource.dart
-import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/network/dio_client.dart';
-import '../models/user_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<UserModel> login({required String email, required String password});
-  Future<UserModel> register({
+  Future<User?> login({required String email, required String password});
+  Future<User?> register({
     required String name,
     required String email,
     required String password,
@@ -15,62 +12,67 @@ abstract class AuthRemoteDataSource {
     String? phone,
   });
   Future<void> logout();
-  Future<UserModel> getProfile();
+  User? getCurrentUser();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final DioClient _dioClient;
-  final FlutterSecureStorage _storage;
-
-  AuthRemoteDataSourceImpl(this._dioClient, this._storage);
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
-  Future<UserModel> login({
-    required String email,
-    required String password,
-  }) async {
-    final response = await _dioClient.dio.post(
-      '/auth/login',
-      data: {'email': email, 'password': password},
-    );
-    final user = UserModel.fromJson(response.data['data']);
-    await _storage.write(key: AppConstants.tokenKey, value: user.token);
-    return user;
+  Future<User?> login({required String email, required String password}) async {
+    try {
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return userCredential.user;
+    } catch (e) {
+      throw Exception('Gagal login: $e');
+    }
   }
 
   @override
-  Future<UserModel> register({
+  Future<User?> register({
     required String name,
     required String email,
     required String password,
     required String role,
     String? phone,
   }) async {
-    final response = await _dioClient.dio.post(
-      '/auth/register',
-      data: {
-        'name': name,
-        'email': email,
-        'password': password,
-        'password_confirmation': password,
-        'role': role,
-        if (phone != null) 'phone': phone,
-      },
-    );
-    final user = UserModel.fromJson(response.data['data']);
-    await _storage.write(key: AppConstants.tokenKey, value: user.token);
-    return user;
+    try {
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = userCredential.user;
+
+      if (user != null) {
+        await user.updateDisplayName(name);
+
+        await _firestore.collection('users').doc(user.uid).set({
+          'name': name,
+          'email': email,
+          'role': role,
+          'phone': phone ?? '',
+          'createdAt': Timestamp.now(),
+        });
+      }
+
+      return user;
+    } catch (e) {
+      throw Exception('Gagal mendaftar: $e');
+    }
   }
 
   @override
   Future<void> logout() async {
-    await _dioClient.dio.post('/auth/logout');
-    await _storage.delete(key: AppConstants.tokenKey);
+    await _auth.signOut();
   }
 
   @override
-  Future<UserModel> getProfile() async {
-    final response = await _dioClient.dio.get('/auth/profile');
-    return UserModel.fromJson(response.data['data']);
+  User? getCurrentUser() {
+    return _auth.currentUser;
   }
 }

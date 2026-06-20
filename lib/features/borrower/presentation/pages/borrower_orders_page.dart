@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/pages/borrower_orders_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/booking_provider.dart';
@@ -61,8 +60,7 @@ class BorrowerOrdersPage extends ConsumerWidget {
                     Container(
                       height: 120,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF376BE0).withOpacity(
-                            0.1), // Transparan agar cantik di mode gelap
+                        color: const Color(0xFF376BE0).withOpacity(0.1),
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(11)),
                       ),
@@ -106,7 +104,6 @@ class BorrowerOrdersPage extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  // Melembutkan warna badge status dengan opasitas
                                   color: isSelesai
                                       ? Colors.green.withOpacity(0.15)
                                       : Colors.orange.withOpacity(0.15),

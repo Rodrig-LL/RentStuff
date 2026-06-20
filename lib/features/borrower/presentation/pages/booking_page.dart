@@ -1,7 +1,5 @@
-// lib/features/borrower/presentation/pages/booking_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../providers/listing_provider.dart';
@@ -70,20 +68,16 @@ final bookingFormProvider =
   return BookingFormNotifier();
 });
 
-// ── 2. WIDGET HALAMAN UTAMA ──
 class BookingPage extends ConsumerWidget {
-  // Menerima parameter dari Router
   final String listingId;
 
   const BookingPage({super.key, required this.listingId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Memanggil provider yang ada di baris atas tadi
     final bookingForm = ref.watch(bookingFormProvider);
     final bookingFormNotifier = ref.read(bookingFormProvider.notifier);
 
-    // Mengambil data listing
     final listingsAsync = ref.watch(listingsProvider);
     final currencyFormat =
         NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -95,7 +89,6 @@ class BookingPage extends ConsumerWidget {
       error: (error, _) =>
           Scaffold(body: Center(child: Text('Terjadi kesalahan: $error'))),
       data: (items) {
-        // Cari barang berdasarkan ID
         final listing = items.firstWhere(
           (l) => l.id.toString() == listingId,
           orElse: () => items.first,
@@ -131,7 +124,6 @@ class BookingPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Info Singkat Barang
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -178,7 +170,6 @@ class BookingPage extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-
                       const Text('Pilih Rentang Tanggal',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 15)),
@@ -225,7 +216,6 @@ class BookingPage extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-
                       if (bookingForm.isValid) ...[
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -283,7 +273,6 @@ class BookingPage extends ConsumerWidget {
                                 ],
                               ),
                               const Divider(height: 24),
-                              // ── TAMBAHAN REVISI DOSEN: Info Deposit Sebelum Nyewa ──
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -322,8 +311,6 @@ class BookingPage extends ConsumerWidget {
                   ),
                 ),
               ),
-
-              // Bottom Bar Area untuk Tombol Konfirmasi
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -335,12 +322,11 @@ class BookingPage extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ── REVISI DOSEN: Batasi durasi peminjaman (Maks 7 Hari) ──
                       if (bookingForm.isValid && bookingForm.totalDays > 7) ...[
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 12.0),
                           child: Row(
-                            children: const [
+                            children: [
                               Icon(Icons.error_outline,
                                   color: Colors.red, size: 18),
                               SizedBox(width: 8),
@@ -357,7 +343,6 @@ class BookingPage extends ConsumerWidget {
                           ),
                         ),
                       ],
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -374,8 +359,6 @@ class BookingPage extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
-
-                      // Logika Tombol Validasi
                       Builder(builder: (context) {
                         final bool isDurationValid = bookingForm.totalDays <= 7;
                         final bool isFormValid =

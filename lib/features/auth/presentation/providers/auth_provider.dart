@@ -1,60 +1,46 @@
 // lib/features/auth/presentation/providers/auth_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/network/dio_client.dart';
-import '../../data/datasources/auth_remote_datasource.dart';
-import '../../data/repositories/auth_repository_impl.dart';
-import '../../domain/entities/user_entity.dart';
-import '../../domain/repositories/auth_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Providers
-final flutterSecureStorageProvider = Provider<FlutterSecureStorage>(
-  (_) => const FlutterSecureStorage(),
-);
+import '../../data/datasources/auth_remote_datasource.dart';
+import '../../domain/entities/user_entity.dart';
 
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
-  return AuthRemoteDataSourceImpl(
-    ref.watch(dioClientProvider),
-    ref.watch(flutterSecureStorageProvider),
-  );
+  return AuthRemoteDataSourceImpl();
 });
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl(ref.watch(authRemoteDataSourceProvider));
-});
-
-// Auth State
 final authStateProvider =
     AsyncNotifierProvider<AuthNotifier, UserEntity?>(AuthNotifier.new);
 
 class AuthNotifier extends AsyncNotifier<UserEntity?> {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   @override
   Future<UserEntity?> build() async {
-    // Check if token exists on app start
-    final storage = ref.read(flutterSecureStorageProvider);
-    final token = await storage.read(key: AppConstants.tokenKey);
-    if (token == null) return null;
-
-    final repo = ref.read(authRepositoryProvider);
-    final result = await repo.getProfile();
-    return result.fold((_) => null, (user) => user);
+    final currentUser = _firebaseAuth.currentUser;
+    if (currentUser != null) {
+      return await _mapFirebaseUserToEntity(currentUser);
+    }
+    return null;
   }
 
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     state = const AsyncLoading();
-    await Future.delayed(const Duration(seconds: 1));
-    final role = email.contains('lender') ? 'lender' : 'borrower';
-    state = AsyncData(UserEntity(
-      id: 1,
-      name: 'User Demo',
-      email: email,
-      role: role,
-      isVerified: true,
-    ));
+    try {
+      final dataSource = ref.read(authRemoteDataSourceProvider);
+      final user = await dataSource.login(email: email, password: password);
+
+      if (user != null) {
+        final entity = await _mapFirebaseUserToEntity(user);
+        state = AsyncData(entity);
+      } else {
+        state = const AsyncData(null);
+      }
+    } catch (e) {
+      state = AsyncError(e, StackTrace.current);
+    }
   }
 
   Future<void> register({
@@ -65,20 +51,55 @@ class AuthNotifier extends AsyncNotifier<UserEntity?> {
     String? phone,
   }) async {
     state = const AsyncLoading();
-    await Future.delayed(const Duration(seconds: 1));
-    state = AsyncData(UserEntity(
-      id: 1,
-      name: name,
-      email: email,
-      role: role,
-      phone: phone,
-      isVerified: false,
-    ));
+    try {
+      final dataSource = ref.read(authRemoteDataSourceProvider);
+      final user = await dataSource.register(
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+        phone: phone,
+      );
+
+      if (user != null) {
+        final entity = await _mapFirebaseUserToEntity(user);
+        state = AsyncData(entity);
+      } else {
+        state = const AsyncData(null);
+      }
+    } catch (e) {
+      state = AsyncError(e, StackTrace.current);
+    }
   }
 
   Future<void> logout() async {
-    final repo = ref.read(authRepositoryProvider);
-    await repo.logout();
-    state = const AsyncData(null);
+    state = const AsyncLoading();
+    try {
+      final dataSource = ref.read(authRemoteDataSourceProvider);
+      await dataSource.logout();
+      state = const AsyncData(null);
+    } catch (e) {
+      state = AsyncError(e, StackTrace.current);
+    }
+  }
+
+  Future<UserEntity> _mapFirebaseUserToEntity(User firebaseUser) async {
+    String role = 'borrower';
+
+    try {
+      final doc =
+          await _firestore.collection('users').doc(firebaseUser.uid).get();
+      if (doc.exists) {
+        role = doc.data()?['role'] ?? 'borrower';
+      }
+    } catch (_) {}
+
+    return UserEntity(
+      id: firebaseUser.uid,
+      name: firebaseUser.displayName ?? 'Pengguna',
+      email: firebaseUser.email ?? '',
+      role: role,
+      isVerified: firebaseUser.emailVerified,
+    );
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
-import 'package:rentstuff/features/auth/presentation/providers/auth_provider.dart';
 
 final myReviewsProvider =
     StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
@@ -69,12 +68,10 @@ class MyReviewsPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final review = reviews[index];
 
-              // Mengambil tanggal selesainya pesanan sebagai tanggal ulasan
               final dateObj =
                   (review['endDate'] as Timestamp?)?.toDate() ?? DateTime.now();
               final dateString = dateFormat.format(dateObj);
 
-              // Mengambil data ulasan
               final rating = (review['reviewRating'] ?? 0).toDouble();
               final reviewText =
                   review['reviewText'] ?? 'Tidak ada teks ulasan.';

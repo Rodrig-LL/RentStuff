@@ -1,4 +1,3 @@
-// lib/features/chat/presentation/pages/chat_room_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-// Chat message model
 class ChatMessage {
   final String id;
   final String senderId;
@@ -41,7 +39,6 @@ class ChatMessage {
       };
 }
 
-// Firestore stream provider
 final chatMessagesProvider =
     StreamProvider.family<List<ChatMessage>, String>((ref, roomId) {
   return FirebaseFirestore.instance
@@ -51,6 +48,14 @@ final chatMessagesProvider =
       .orderBy('created_at', descending: false)
       .snapshots()
       .map((snap) => snap.docs.map(ChatMessage.fromFirestore).toList());
+});
+
+final chatRoomDetailsProvider =
+    StreamProvider.family<DocumentSnapshot, String>((ref, roomId) {
+  return FirebaseFirestore.instance
+      .collection('chat_rooms')
+      .doc(roomId)
+      .snapshots();
 });
 
 class ChatRoomPage extends ConsumerStatefulWidget {
@@ -98,7 +103,6 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
           .collection('messages')
           .add(message.toFirestore());
 
-      // Update last message in room document
       await FirebaseFirestore.instance
           .collection('chat_rooms')
           .doc(widget.roomId)
@@ -107,7 +111,6 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
         'last_message_at': Timestamp.now(),
       }, SetOptions(merge: true));
 
-      // Scroll to bottom
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollCtrl.hasClients) {
           _scrollCtrl.animateTo(
@@ -131,40 +134,70 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(chatMessagesProvider(widget.roomId));
+    final roomDetailsAsync = ref.watch(chatRoomDetailsProvider(widget.roomId));
     final user = ref.watch(authStateProvider).value;
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => context.pop(), // Kembali ke halaman orders
+          onPressed: () => context.pop(),
         ),
-        title: Row(
-          children: [
-            const CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.primaryLight,
-              child: Text('B',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700, color: AppColors.primary)),
-            ),
-            const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        title: roomDetailsAsync.when(
+          loading: () =>
+              const Text('Memuat...', style: TextStyle(fontSize: 15)),
+          error: (e, _) => const Text('Error', style: TextStyle(fontSize: 15)),
+          data: (doc) {
+            if (!doc.exists) return const Text('Obrolan tidak ditemukan');
+
+            final data = doc.data() as Map<String, dynamic>;
+            final currentUserId = user?.id.toString() ?? '';
+
+            String opponentName = 'Pengguna';
+            if (data['borrower_id'] == currentUserId) {
+              opponentName = data['lender_name'] ?? 'Pemilik Barang';
+            } else {
+              opponentName = data['borrower_name'] ?? 'Penyewa';
+            }
+
+            return Row(
               children: [
-                Text('Budi Santoso',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                Text('Online',
-                    style: TextStyle(fontSize: 11, color: AppColors.secondary)),
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AppColors.primaryLight,
+                  child: Text(
+                    opponentName.isNotEmpty
+                        ? opponentName[0].toUpperCase()
+                        : 'U',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, color: AppColors.primary),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        opponentName,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Text('Online',
+                          style: TextStyle(
+                              fontSize: 11, color: AppColors.secondary)),
+                    ],
+                  ),
+                ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
       body: Column(
         children: [
-          // Messages
           Expanded(
             child: messagesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -194,8 +227,6 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                     ),
             ),
           ),
-
-          // Input bar
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             decoration: BoxDecoration(

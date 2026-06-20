@@ -49,7 +49,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     ref.listen(authStateProvider, (_, next) {
       if (next.hasError) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error.toString()), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text(next.error.toString()),
+              backgroundColor: AppColors.error),
         );
       }
     });
@@ -69,10 +71,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Role Selector
               const Text(
                 'Saya ingin bergabung sebagai:',
-                style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                style: TextStyle(
+                    fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 12),
               Row(
@@ -83,7 +85,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     icon: Icons.search_rounded,
                     color: AppColors.borrowerColor,
                     isSelected: _selectedRole == AppConstants.roleBorrower,
-                    onTap: () => setState(() => _selectedRole = AppConstants.roleBorrower),
+                    onTap: () => setState(
+                        () => _selectedRole = AppConstants.roleBorrower),
                   ),
                   const SizedBox(width: 12),
                   _RoleCard(
@@ -92,25 +95,30 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     icon: Icons.inventory_2_rounded,
                     color: AppColors.lenderColor,
                     isSelected: _selectedRole == AppConstants.roleLender,
-                    onTap: () => setState(() => _selectedRole = AppConstants.roleLender),
+                    onTap: () =>
+                        setState(() => _selectedRole = AppConstants.roleLender),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Nama Lengkap', prefixIcon: Icon(Icons.person_outline)),
-                validator: (v) => (v == null || v.isEmpty) ? 'Nama tidak boleh kosong' : null,
+                decoration: const InputDecoration(
+                    labelText: 'Nama Lengkap',
+                    prefixIcon: Icon(Icons.person_outline)),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Nama tidak boleh kosong' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
+                decoration: const InputDecoration(
+                    labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Email tidak boleh kosong';
-                  if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) return 'Format email tidak valid';
+                  if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v))
+                    return 'Format email tidak valid';
                   return null;
                 },
               ),
@@ -118,7 +126,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               TextFormField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'No. HP (opsional)', prefixIcon: Icon(Icons.phone_outlined)),
+                decoration: const InputDecoration(
+                    labelText: 'No. HP (opsional)',
+                    prefixIcon: Icon(Icons.phone_outlined)),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -128,32 +138,43 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   labelText: 'Password',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(_obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Password tidak boleh kosong';
+                  if (v == null || v.isEmpty)
+                    return 'Password tidak boleh kosong';
                   if (v.length < 8) return 'Password minimal 8 karakter';
                   return null;
                 },
               ),
               const SizedBox(height: 28),
-
               ElevatedButton(
                 onPressed: authState.isLoading ? null : _handleRegister,
                 child: authState.isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
                     : const Text('Buat Akun'),
               ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Sudah punya akun? ', style: TextStyle(color: AppColors.textSecondary)),
+                  const Text('Sudah punya akun? ',
+                      style: TextStyle(color: AppColors.textSecondary)),
                   GestureDetector(
                     onTap: () => context.go('/login'),
-                    child: const Text('Masuk', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                    child: const Text('Masuk',
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
@@ -174,8 +195,12 @@ class _RoleCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _RoleCard({
-    required this.title, required this.subtitle, required this.icon,
-    required this.color, required this.isSelected, required this.onTap,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
   });
 
   @override
@@ -188,15 +213,24 @@ class _RoleCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isSelected ? color.withOpacity(0.1) : AppColors.bgCard,
-            border: Border.all(color: isSelected ? color : AppColors.divider, width: isSelected ? 2 : 1),
+            border: Border.all(
+                color: isSelected ? color : AppColors.divider,
+                width: isSelected ? 2 : 1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             children: [
-              Icon(icon, color: isSelected ? color : AppColors.textSecondary, size: 32),
+              Icon(icon,
+                  color: isSelected ? color : AppColors.textSecondary,
+                  size: 32),
               const SizedBox(height: 8),
-              Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: isSelected ? color : AppColors.textPrimary)),
-              Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text(title,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? color : AppColors.textPrimary)),
+              Text(subtitle,
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textSecondary)),
             ],
           ),
         ),

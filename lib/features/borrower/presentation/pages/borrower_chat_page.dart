@@ -1,4 +1,3 @@
-// lib/features/borrower/presentation/pages/borrower_chat_page.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,7 +50,6 @@ class BorrowerChatPage extends ConsumerWidget {
     return SafeArea(
       child: Column(
         children: [
-          // ── Header ──
           Container(
             decoration: BoxDecoration(
               border: Border(
@@ -67,8 +65,6 @@ class BorrowerChatPage extends ConsumerWidget {
                       fontWeight: FontWeight.bold)),
             ),
           ),
-
-          // ── Chat List ──
           Expanded(
             child: chatRoomsAsync.when(
               loading: () => const Center(
@@ -107,7 +103,6 @@ class BorrowerChatPage extends ConsumerWidget {
                       onTap: () => context.push('/chats/${room.id}'),
                       child: Container(
                         decoration: BoxDecoration(
-                          // MENGGUNAKAN WARNA TEMA UNTUK KOTAK
                           color: Theme.of(context).cardColor,
                           border:
                               Border.all(color: Colors.grey.withOpacity(0.2)),
@@ -142,7 +137,6 @@ class BorrowerChatPage extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // DIHAPUS Colors.black AGAR MENYESUAIKAN TEMA
                                   Text(room.otherName,
                                       style: const TextStyle(
                                           fontSize: 15,
