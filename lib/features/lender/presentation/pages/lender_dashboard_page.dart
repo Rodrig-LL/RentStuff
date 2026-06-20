@@ -4,6 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import 'lender_listings_page.dart';
+import 'lender_chat_page.dart';
+import 'lender_profile_page.dart';
+import '../providers/lender_dashboard_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LenderDashboardPage extends ConsumerStatefulWidget {
   const LenderDashboardPage({super.key});
@@ -24,9 +29,9 @@ class _LenderDashboardPageState extends ConsumerState<LenderDashboardPage> {
         index: _currentIndex,
         children: const [
           _DashboardTab(),
-          _MyListingsTab(),
-          _BookingRequestsTab(),
-          _LenderProfileTab(),
+          LenderListingsPage(),
+          LenderChatPage(),
+          LenderProfilePage(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -46,9 +51,9 @@ class _LenderDashboardPageState extends ConsumerState<LenderDashboardPage> {
               activeIcon: Icon(Icons.inventory_2_rounded),
               label: 'Barang'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.list_alt_outlined),
-              activeIcon: Icon(Icons.list_alt_rounded),
-              label: 'Pesanan'),
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chat',
+          ),
           BottomNavigationBarItem(
               icon: Icon(Icons.person_outline_rounded),
               activeIcon: Icon(Icons.person_rounded),
@@ -67,6 +72,8 @@ class _DashboardTab extends ConsumerWidget {
     final user = ref.watch(authStateProvider).value;
     final fmt =
         NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    final dashboard = ref.watch(lenderDashboardProvider);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -99,42 +106,57 @@ class _DashboardTab extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Stats Cards
-            Row(
-              children: [
-                Expanded(
-                    child: _StatCard(
-                        label: 'Pendapatan Bulan Ini',
-                        value: fmt.format(1250000),
-                        icon: Icons.account_balance_wallet_outlined,
-                        color: const Color(0xFF10B981))),
-                const SizedBox(width: 12),
-                const Expanded(
-                    child: _StatCard(
-                        label: 'Total Penyewaan',
-                        value: '14x',
-                        icon: Icons.handshake_outlined,
-                        color: Color(0xFF376BE0))),
-              ],
+            dashboard.when(
+              data: (stats) => Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Pendapatan Bulan Ini',
+                          value: fmt.format(stats['income']),
+                          icon: Icons.account_balance_wallet_outlined,
+                          color: const Color(0xFF10B981),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Total Penyewaan',
+                          value: '${stats['totalRentals']}x',
+                          icon: Icons.handshake_outlined,
+                          color: const Color(0xFF376BE0),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Barang Aktif',
+                          value: '${stats['activeItems']}',
+                          icon: Icons.inventory_2_outlined,
+                          color: const Color(0xFFF59E0B),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Permintaan Baru',
+                          value: '${stats['newRequests']}',
+                          icon: Icons.mark_email_unread_outlined,
+                          color: const Color(0xFFF97316),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Text(e.toString()),
             ),
-            const SizedBox(height: 12),
-            const Row(
-              children: [
-                Expanded(
-                    child: _StatCard(
-                        label: 'Barang Aktif',
-                        value: '3',
-                        icon: Icons.inventory_2_outlined,
-                        color: Color(0xFFF59E0B))),
-                SizedBox(width: 12),
-                Expanded(
-                    child: _StatCard(
-                        label: 'Permintaan Baru',
-                        value: '2',
-                        icon: Icons.mark_email_unread_outlined,
-                        color: Color(0xFFF97316))),
-              ],
-            ),
-            const SizedBox(height: 28),
 
             // Quick Actions
             const Text('Aksi Cepat',
@@ -153,44 +175,87 @@ class _DashboardTab extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _QuickAction(
-                    label: 'Lihat Pesanan',
-                    icon: Icons.receipt_long_outlined,
+                    label: 'Lihat Chat',
+                    icon: Icons.chat,
                     color: const Color(0xFF10B981),
-                    onTap: () => context.go('/lender/bookings'),
+                    onTap: () => context.go('/lender/chat'),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 28),
 
-            // Recent Bookings
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Pesanan Terbaru',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                const Text(
+                  'Pesanan Terbaru',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 TextButton(
-                    onPressed: () => context.go('/lender/bookings'),
-                    child: const Text('Lihat Semua',
-                        style: TextStyle(color: Color(0xFF376BE0)))),
+                  onPressed: () => context.push('/lender/bookings'),
+                  child: const Text(
+                    'Lihat Semua',
+                    style: TextStyle(
+                      color: Color(0xFF376BE0),
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
-            _RecentBookingItem(
-              itemName: 'Sony A7III + Lensa 24-70mm',
-              borrowerName: 'Andi Permana',
-              dates: '10 – 12 Apr 2026',
-              status: 'pending',
-              price: fmt.format(750000),
-            ),
-            const SizedBox(height: 8),
-            _RecentBookingItem(
-              itemName: 'DJI Mini 3 Pro Drone',
-              borrowerName: 'Sari Kusuma',
-              dates: '15 – 17 Apr 2026',
-              status: 'approved',
-              price: fmt.format(900000),
+
+            StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection('bookings')
+                  .orderBy(
+                    'createdAt',
+                    descending: true,
+                  )
+                  .limit(5)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                final bookings = snapshot.data!.docs;
+
+                if (bookings.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                      'Belum ada pesanan.',
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: bookings.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 8,
+                      ),
+                      child: _RecentBookingItem(
+                        itemName: data['listingTitle'] ?? '-',
+                        borrowerName: data['borrowerName'] ?? 'Borrower',
+                        dates: '${data['durationDays'] ?? 0} hari',
+                        status: data['status'] ?? '',
+                        price: fmt.format(
+                          data['totalPrice'] ?? 0,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ],
         ),
@@ -295,9 +360,20 @@ class _RecentBookingItem extends StatelessWidget {
     required this.price,
   });
 
-  Color get _color =>
-      status == 'pending' ? const Color(0xFFF97316) : const Color(0xFF376BE0);
-  String get _label => status == 'pending' ? 'Menunggu' : 'Disetujui';
+  Color get _color {
+    switch (status.toLowerCase()) {
+      case 'menunggu':
+        return const Color(0xFFFF97316);
+
+      case 'disetujui':
+        return const Color(0xFF376BE0);
+
+      default:
+        return const Color(0xFFFF97316);
+    }
+  }
+
+  String get _label => status;
 
   @override
   Widget build(BuildContext context) {
