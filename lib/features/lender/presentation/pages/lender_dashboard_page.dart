@@ -249,7 +249,8 @@ class _DashboardTab extends ConsumerWidget {
                         dates: '${data['durationDays'] ?? 0} hari',
                         status: data['status'] ?? '',
                         price: fmt.format(
-                          data['totalPrice'] ?? 0,
+                          data['lenderEarnings'] ??
+                              ((data['totalPrice'] ?? 0).toDouble() * 0.90),
                         ),
                       ),
                     );

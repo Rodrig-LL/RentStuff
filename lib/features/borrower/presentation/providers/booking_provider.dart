@@ -28,6 +28,9 @@ class BookingNotifier {
     required String listingId,
     required String listingTitle,
     required double totalPrice,
+    required double rentalPrice,
+    required double shippingPrice,
+    required double deposit,
     required int durationDays,
     required String lenderId,
     required DateTime startDate,
@@ -36,12 +39,20 @@ class BookingNotifier {
   }) async {
     try {
       final String userId = _auth.currentUser?.uid ?? 'user_demo_123';
+      final double platformFee = rentalPrice * 0.10;
+      final double lenderEarnings = rentalPrice * 0.90;
 
-      await _firestore.collection('bookings').add({
+      final DocumentReference bookingRef =
+          await _firestore.collection('bookings').add({
         'borrowerId': userId,
         'listingId': listingId,
         'listingTitle': listingTitle,
         'totalPrice': totalPrice,
+        'rentalPrice': rentalPrice,
+        'shippingPrice': shippingPrice,
+        'deposit': deposit,
+        'platformFee': platformFee,
+        'lenderEarnings': lenderEarnings,
         'status': 'Menunggu',
         'durationDays': durationDays,
         'createdAt': Timestamp.now(),
@@ -50,9 +61,34 @@ class BookingNotifier {
         'endDate': endDate,
         'listingPhoto': listingPhoto,
       });
+
+      await _firestore.collection('platform_revenues').add({
+        'bookingId': bookingRef.id,
+        'listingTitle': listingTitle,
+        'amount': platformFee,
+        'rentalPrice': rentalPrice,
+        'borrowerId': userId,
+        'lenderId': lenderId,
+        'createdAt': Timestamp.now(),
+        'status': 'Menunggu',
+      });
+
       return true;
     } catch (e) {
       print("Error membuat pesanan: $e");
+      return false;
+    }
+  }
+
+  /// Membatalkan pesanan yang masih berstatus 'Menunggu'
+  Future<bool> cancelBooking(String bookingId) async {
+    try {
+      await _firestore.collection('bookings').doc(bookingId).update({
+        'status': 'Dibatalkan',
+      });
+      return true;
+    } catch (e) {
+      print("Error membatalkan pesanan: $e");
       return false;
     }
   }

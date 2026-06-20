@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import 'Profile_Page/edit_profile_page.dart';
 import 'Profile_Page/my_reviews_page.dart';
+import 'Profile_Page/my_favorites_page.dart';
 import 'Profile_Page/help_center_page.dart';
 import 'Profile_Page/settings_page.dart';
 
@@ -190,6 +191,14 @@ class BorrowerProfilePage extends ConsumerWidget {
                             context,
                             MaterialPageRoute(
                                 builder: (_) => const MyReviewsPage()))),
+                    Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+                    _MenuItem(
+                        icon: Icons.favorite_outline_rounded,
+                        label: 'Favorit Saya',
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const MyFavoritesPage()))),
                     Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
                     _MenuItem(
                         icon: Icons.help_outline_rounded,

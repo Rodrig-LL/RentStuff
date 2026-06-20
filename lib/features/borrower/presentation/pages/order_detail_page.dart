@@ -206,7 +206,78 @@ class OrderDetailPage extends StatelessWidget {
                         color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             )
-          : null,
+          : booking.status.toLowerCase() == 'menunggu'
+              ? Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    border: Border(
+                        top: BorderSide(color: Colors.grey.withOpacity(0.2))),
+                  ),
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red),
+                      foregroundColor: Colors.red,
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: Theme.of(context).cardColor,
+                          title: const Text('Batalkan Pesanan?'),
+                          content: const Text(
+                              'Pesanan yang sudah dibatalkan tidak dapat dikembalikan. Lanjutkan?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('Tidak',
+                                  style: TextStyle(color: Colors.grey)),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                try {
+                                  await FirebaseFirestore.instance
+                                      .collection('bookings')
+                                      .doc(booking.id)
+                                      .update({'status': 'Dibatalkan'});
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Pesanan dibatalkan'),
+                                          backgroundColor: Colors.green),
+                                    );
+                                    Navigator.pop(context);
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text('Gagal: $e'),
+                                          backgroundColor: Colors.red),
+                                    );
+                                  }
+                                }
+                              },
+                              child: const Text('Ya, Batalkan',
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: const Text('Batalkan Pesanan',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold)),
+                  ),
+                )
+              : null,
     );
   }
 }

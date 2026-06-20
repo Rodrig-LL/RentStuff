@@ -203,6 +203,70 @@ class BorrowerOrdersPage extends ConsumerWidget {
                                         fontWeight: FontWeight.bold)),
                               ),
                       )
+                    ] else if (booking.status.toLowerCase() == 'menunggu') ...[
+                      Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Colors.red,
+                            minimumSize: const Size.fromHeight(40),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor:
+                                    Theme.of(context).cardColor,
+                                title: const Text('Batalkan Pesanan?'),
+                                content: const Text(
+                                    'Pesanan yang sudah dibatalkan tidak dapat dikembalikan. Lanjutkan?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Tidak',
+                                        style:
+                                            TextStyle(color: Colors.grey)),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    onPressed: () async {
+                                      Navigator.pop(ctx);
+                                      final success = await ref
+                                          .read(bookingActionProvider)
+                                          .cancelBooking(booking.id);
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(success
+                                                ? 'Pesanan dibatalkan'
+                                                : 'Gagal membatalkan pesanan'),
+                                            backgroundColor: success
+                                                ? Colors.green
+                                                : Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: const Text('Ya, Batalkan',
+                                        style:
+                                            TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.cancel_outlined, size: 18),
+                          label: const Text('Batalkan Pesanan',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      )
                     ]
                   ],
                 ),

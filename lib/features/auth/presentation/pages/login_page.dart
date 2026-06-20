@@ -39,12 +39,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     ref.listen(authStateProvider, (_, next) {
       if (next.hasError) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error.toString()),
             backgroundColor: AppColors.error,
           ),
         );
+      } else if (next.hasValue && next.value != null) {
+        ScaffoldMessenger.of(context).clearSnackBars();
       }
     });
 

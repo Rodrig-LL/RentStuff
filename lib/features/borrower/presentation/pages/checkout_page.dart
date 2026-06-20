@@ -267,6 +267,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                 startDate: widget.startDate,
                                 endDate: widget.endDate,
                                 totalPrice: finalGrandTotal,
+                                rentalPrice: widget.totalPrice - discount,
+                                shippingPrice: _shippingPrice,
+                                deposit: itemDeposit,
                                 durationDays: widget.totalDays,
                                 listingPhoto: widget.listing.photos.isNotEmpty
                                     ? widget.listing.photos.first

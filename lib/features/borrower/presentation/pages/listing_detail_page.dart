@@ -6,6 +6,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../providers/listing_provider.dart';
+import '../providers/wishlist_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -17,6 +18,8 @@ class ListingDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listings = ref.watch(listingsProvider);
+    final wishlist = ref.watch(wishlistProvider).value ?? {};
+    final wishlistAction = ref.read(wishlistActionProvider);
     final currencyFormat = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
@@ -33,7 +36,7 @@ class ListingDetailPage extends ConsumerWidget {
           (l) => l.id.toString() == listingId,
           orElse: () => items.first,
         );
-        return _buildDetail(context, listing, currencyFormat);
+        return _buildDetail(context, listing, currencyFormat, wishlist, wishlistAction);
       },
     );
   }
@@ -42,6 +45,8 @@ class ListingDetailPage extends ConsumerWidget {
     BuildContext context,
     ListingEntity listing,
     NumberFormat currencyFormat,
+    Set<String> wishlist,
+    WishlistNotifier wishlistAction,
   ) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -69,9 +74,30 @@ class ListingDetailPage extends ConsumerWidget {
                 child: CircleAvatar(
                   backgroundColor: Theme.of(context).cardColor.withOpacity(0.8),
                   child: IconButton(
-                    icon: Icon(Icons.favorite_border_rounded,
-                        size: 18, color: Theme.of(context).iconTheme.color),
-                    onPressed: () {},
+                    icon: Icon(
+                      wishlist.contains(listing.id)
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      size: 18,
+                      color: wishlist.contains(listing.id)
+                          ? Colors.red
+                          : Theme.of(context).iconTheme.color,
+                    ),
+                    onPressed: () async {
+                      final success = await wishlistAction.toggleWishlist(listing.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(success
+                                ? (wishlist.contains(listing.id)
+                                    ? 'Dihapus dari favorit'
+                                    : 'Ditambahkan ke favorit')
+                                : 'Gagal memperbarui favorit'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ),
               ),
@@ -323,6 +349,7 @@ class ListingDetailPage extends ConsumerWidget {
                                 'Halo, saya tertarik dengan ${listing.title}',
                             'last_message_at': Timestamp.now(),
                             'unread': 0,
+                            'participants': [borrowerId, listing.lenderId.toString()],
                           });
 
                           ScaffoldMessenger.of(context).hideCurrentSnackBar();

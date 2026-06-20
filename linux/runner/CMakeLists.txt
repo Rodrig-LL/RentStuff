@@ -23,4 +23,8 @@ add_definitions(-DAPPLICATION_ID="${APPLICATION_ID}")
 target_link_libraries(${BINARY_NAME} PRIVATE flutter)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 
+# Allow unresolved symbols in shared libs so the system glib can resolve them at
+# runtime (fixes snap flutter's bundled old glib conflicting with libsecret).
+target_link_options(${BINARY_NAME} PRIVATE "-Wl,--allow-shlib-undefined")
+
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")

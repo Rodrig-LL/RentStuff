@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,12 +22,16 @@ class ChatRoomModel {
 
 final borrowerChatRoomsProvider =
     StreamProvider.autoDispose<List<ChatRoomModel>>((ref) {
+  final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+  if (currentUserId.isEmpty) return Stream.value([]);
+
   return FirebaseFirestore.instance
       .collection('chat_rooms')
-      .orderBy('last_message_at', descending: true)
+      .where('participants', arrayContains: currentUserId)
       .snapshots()
       .map((snapshot) {
-    return snapshot.docs.map((doc) {
+    final rooms = snapshot.docs.map((doc) {
       final data = doc.data();
       return ChatRoomModel(
         id: doc.id,
@@ -37,6 +42,9 @@ final borrowerChatRoomsProvider =
         unread: data['unread'] ?? 0,
       );
     }).toList();
+
+    rooms.sort((a, b) => b.lastMessageAt.compareTo(a.lastMessageAt));
+    return rooms;
   });
 });
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -21,10 +20,7 @@ class LenderChatPage extends ConsumerWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('chat_rooms')
-            .orderBy(
-              'last_message_at',
-              descending: true,
-            )
+            .where('participants', arrayContains: currentUserId)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -37,7 +33,16 @@ class LenderChatPage extends ConsumerWidget {
             );
           }
 
-          final rooms = snapshot.data!.docs;
+          final rooms = List<QueryDocumentSnapshot>.from(snapshot.data!.docs);
+          rooms.sort((a, b) {
+            final aData = a.data() as Map<String, dynamic>;
+            final bData = b.data() as Map<String, dynamic>;
+            final aTime = (aData['last_message_at'] as Timestamp?)?.toDate() ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+            final bTime = (bData['last_message_at'] as Timestamp?)?.toDate() ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+            return bTime.compareTo(aTime);
+          });
 
           if (rooms.isEmpty) {
             return const Center(

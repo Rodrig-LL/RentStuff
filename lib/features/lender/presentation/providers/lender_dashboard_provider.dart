@@ -35,9 +35,10 @@ final lenderDashboardProvider =
     if (data['status'] == 'Selesai') {
       totalRentals++;
 
-      income +=
-          (data['totalPrice'] ?? 0)
-              .toDouble();
+      final double orderEarnings = (data['lenderEarnings'] ??
+              ((data['totalPrice'] ?? 0).toDouble() * 0.90))
+          .toDouble();
+      income += orderEarnings;
     }
   }
 

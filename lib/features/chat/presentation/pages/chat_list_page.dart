@@ -24,12 +24,14 @@ final chatRoomsProvider =
     StreamProvider.autoDispose<List<ChatRoomModel>>((ref) {
   final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
+  if (currentUserId.isEmpty) return Stream.value([]);
+
   return FirebaseFirestore.instance
       .collection('chat_rooms')
-      .orderBy('last_message_at', descending: true)
+      .where('participants', arrayContains: currentUserId)
       .snapshots()
       .map((snapshot) {
-    return snapshot.docs.map((doc) {
+    final rooms = snapshot.docs.map((doc) {
       final data = doc.data();
 
       String opponentName = 'Pengguna';
@@ -48,6 +50,9 @@ final chatRoomsProvider =
         unread: data['unread'] ?? 0,
       );
     }).toList();
+
+    rooms.sort((a, b) => b.lastMessageAt.compareTo(a.lastMessageAt));
+    return rooms;
   });
 });
 
