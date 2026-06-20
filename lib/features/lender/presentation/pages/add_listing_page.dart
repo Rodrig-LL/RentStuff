@@ -102,7 +102,7 @@ class _AddListingPageState extends ConsumerState<AddListingPage> {
     }
   }
 
-  Future<void> _submit(dynamic CloudinaryService) async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(

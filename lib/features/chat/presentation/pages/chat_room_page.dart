@@ -107,6 +107,8 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
           .collection('chat_rooms')
           .doc(widget.roomId)
           .set({
+        'lender_id': user.role == 'lender' ? user.id.toString() : null,
+        'borrower_id': user.role == 'borrower' ? user.id.toString() : null,
         'last_message': text,
         'last_message_at': Timestamp.now(),
       }, SetOptions(merge: true));
